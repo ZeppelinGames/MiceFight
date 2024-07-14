@@ -1,18 +1,26 @@
 ﻿using Editor.Controls;
+using Linearstar.Windows.RawInput;
+using Linearstar.Windows.RawInput.Native;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace Editor
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
-        public static Form1 instance;
+        public static MainForm instance;
 
         public MainControl mainControl => _mainControl;
         private MainControl _mainControl;
 
-        public Form1() {
+        public MainForm() {
             InitializeComponent();
+
+            Cursor.Hide();
 
             instance = this;
 
@@ -21,11 +29,29 @@ namespace Editor
                 Margin = new Padding(0),
                 Padding = new Padding(0),
             };
+
+            this.TopMost = true;
+            this.FormBorderStyle = FormBorderStyle.None;
+            this.WindowState = FormWindowState.Maximized;
+
+            this.FormClosing += Form1_Closing;
+
+        }
+
+        public void CloseGame() {
+            _mainControl.DeregisterHook();
+            this.Close();
+        }
+
+        private void Form1_Closing(object sender, EventArgs e) {
+           
         }
 
         private void Form1_Load(object sender, EventArgs e) {
             this.Controls.Add(_mainControl);
             _mainControl?.UpdateWindow();
+
+            Debug.WriteLine("Main Control initialised");
         }
 
         private void Form1_ResizeEnd(object sender, EventArgs e) {

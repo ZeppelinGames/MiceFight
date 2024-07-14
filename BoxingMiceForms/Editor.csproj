@@ -61,11 +61,17 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Gma.System.MouseKeyHook, Version=5.7.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\MouseKeyHook.5.7.1\lib\net48\Gma.System.MouseKeyHook.dll</HintPath>
+    </Reference>
     <Reference Include="MonoGame.Forms.DX, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\MonoGame.Forms.DX.3.2.0\lib\net48\MonoGame.Forms.DX.dll</HintPath>
     </Reference>
     <Reference Include="MonoGame.Framework, Version=3.8.9102.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\MonoGame.Framework.WindowsDX.9000.3.8.9102\lib\net40\MonoGame.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="RawInput.Sharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\RawInput.Sharp.0.1.3\lib\net48\RawInput.Sharp.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
       <HintPath>packages\SharpDX.4.0.1\lib\net45\SharpDX.dll</HintPath>
@@ -118,6 +124,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RawMouseData.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
