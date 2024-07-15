@@ -35,6 +35,7 @@ namespace Editor
             this.WindowState = FormWindowState.Maximized;
 
             this.FormClosing += Form1_Closing;
+            this.DoubleBuffered = true;
 
         }
 

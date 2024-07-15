@@ -32,6 +32,12 @@ namespace Editor {
             public float X;
             public float Y;
 
+            public float deltaX;
+            public float deltaY;
+
+            public float lastDeltaX;
+            public float lastDeltaY;
+
             public Color color;
 
             public MouseData(float x = 0, float y = 0) {

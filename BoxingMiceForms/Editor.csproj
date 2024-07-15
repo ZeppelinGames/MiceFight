@@ -125,6 +125,8 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RawMouseData.cs" />
+    <Compile Include="Sprites\Sprite.cs" />
+    <Compile Include="Sprites\TickSprite.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
