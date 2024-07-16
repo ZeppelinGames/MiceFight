@@ -28,6 +28,7 @@ namespace Editor.Controls {
     };
 
     public class MainControl : MonoGameControl {
+        static Random rnd = new Random();
         private IKeyboardMouseEvents _mouseHook;
 
         private const int DEFAULT_SCREEN_WIDTH = 1000;
@@ -42,9 +43,9 @@ namespace Editor.Controls {
         private int _renderWidth;
         private int _renderHeight;
 
-        private float _mouseSens = 0.01f;
+        private float _moveSpeed = 0.5f;
 
-        private static Color BackgroundColor = Color.White;
+        private static Color BackgroundColor = new Color(241, 233, 210);
 
         Texture2D _renderTarget;
         Rectangle _renderTargetRect;
@@ -52,14 +53,26 @@ namespace Editor.Controls {
         Color[] _render = new Color[TARGET_WIDTH * TARGET_HEIGHT];
         Color[] _clearRender = new Color[TARGET_WIDTH * TARGET_HEIGHT];
 
-        Dictionary<string, MouseData> _mouseData = new Dictionary<string, MouseData>();
-        List<string> _mouseIds = new List<string>();
-        List<bool> _playerReadyState = new List<bool>();
+        Dictionary<string, Player> _playerPath = new Dictionary<string, Player>();
+        List<Player> _players = new List<Player>();
 
         // Game state vars
         GAMESTATE _gameState = GAMESTATE.TITLE;
-       
+
         Sprite titleText, titleJoinText, titleHint;
+
+        Color[] _playerColors = new Color[] {
+            new Color(222, 110, 79),
+            new Color(175, 160, 69),
+            new Color(124, 127, 82),
+            new Color(148, 181, 164),
+            new Color(109, 114, 142),
+            new Color(231, 184, 92),
+            new Color(218, 141, 73),
+            new Color(195, 129, 167),
+            new Color(132, 100, 139),
+            new Color(229, 138, 133),
+        };
 
         public MainControl() {
             _screenWidth = DEFAULT_SCREEN_WIDTH;
@@ -104,27 +117,30 @@ namespace Editor.Controls {
                             if (mouse.Mouse.Buttons == RawMouseButtonFlags.LeftButtonDown) {
                                 RegisterMouse(mouseDevice);
                             }
-                            if (mouse == null || !_mouseData.ContainsKey(mouseDevice.DevicePath)) return;
+                            if (mouse == null || !_playerPath.ContainsKey(mouseDevice.DevicePath)) return;
 
-                            MouseData connected = _mouseData[mouseDevice.DevicePath];
-                            connected.UpdateKeys(mouse.Mouse.Buttons);
+                            MouseData connected = _playerPath[mouseDevice.DevicePath].mouseData;
+                            connected.UpdateKeys(mouse.Mouse);
 
-                            if (!_playerReadyState[connected.playerId] && connected.leftButton && connected.rightButton) {
-                                _playerReadyState[connected.playerId] = true;
-                                Debug.WriteLine("READY!");
+                            Player p = _players[connected.playerId];
+                            if (!p.isReady) {
+                                if (connected.scroll > 0) {
+                                    p.playerColorIndex++;
+                                    p.playerColorIndex = p.playerColorIndex >= _playerColors.Length ? 0 : p.playerColorIndex;
+
+                                    p.color = _playerColors[p.playerColorIndex];
+                                }
+                                if (connected.scroll < 0) {
+                                    p.playerColorIndex--;
+                                    p.playerColorIndex = p.playerColorIndex < 0 ? _playerColors.Length - 1 : p.playerColorIndex;
+                                    p.color = _playerColors[p.playerColorIndex];
+                                }
                             }
 
-                            connected.X += mouse.Mouse.LastX * _mouseSens;
-                            connected.Y += mouse.Mouse.LastY * _mouseSens;
-
-                            connected.X = Clamp(connected.X, 0, this.Size.Width);
-                            connected.Y = Clamp(connected.Y, 0, this.Size.Height);
-                            connected.deltaX = mouse.Mouse.LastX;
-                            connected.deltaY = mouse.Mouse.LastY;
-
-                            if (mouse.Mouse.LastX != 0 && mouse.Mouse.LastY != 0) {
-                                connected.lastDeltaX = mouse.Mouse.LastX;
-                                connected.lastDeltaY = mouse.Mouse.LastY;
+                            // Ready up
+                            if (connected.leftButton && connected.rightButton) {
+                                _players[connected.playerId].isReady = !_players[connected.playerId].isReady;
+                                Debug.WriteLine("READY!");
                             }
 
                             break;
@@ -136,21 +152,21 @@ namespace Editor.Controls {
 
         int playerId = 0;
         void RegisterMouse(RawInputDevice device) {
-            if (!_mouseData.ContainsKey(device.DevicePath)) {
+            if (!_playerPath.ContainsKey(device.DevicePath)) {
                 Debug.WriteLine($"Added mouse: {device.DevicePath} {device.ProductName}");
-                
-                MouseData mouseData = new MouseData(playerId, TARGET_WIDTH / 2, TARGET_HEIGHT / 2);
+
+                Player newPlayer = new Player(playerId);
+                newPlayer.playerColorIndex = rnd.Next(0, _playerColors.Length);
+                newPlayer.color = _playerColors[newPlayer.playerColorIndex];
                 playerId++;
-                
-                _mouseIds.Add(device.DevicePath);
-                _mouseData.Add(device.DevicePath, mouseData);
-                _playerReadyState.Add(false);
+
+                _players.Add(newPlayer);
+                _playerPath.Add(device.DevicePath, newPlayer);
             }
         }
 
         protected override void Initialize() {
             _renderTarget = new Texture2D(Editor.GraphicsDevice, TARGET_WIDTH, TARGET_HEIGHT);
-
             _renderTarget.SetData(_render);
 
             UpdateWindow();
@@ -200,6 +216,10 @@ namespace Editor.Controls {
                     break;
             }
 
+            for (int i = 0; i < _players.Count; i++) {
+                _players[i].mouseData.Update(gameTime);
+            }
+
             // Lock mouse center screen
             System.Drawing.Point formCenter = new System.Drawing.Point(
              MainForm.instance.Location.X + (int)(MainForm.instance.Width * 0.5f),
@@ -230,29 +250,37 @@ namespace Editor.Controls {
         }
 
         void TitleUpdate(GameTime gameTime) {
-            float step = (float)(Math.PI * 2) / Math.Max(1, _mouseIds.Count);
+            float step = (float)(Math.PI * 2) / Math.Max(1, _players.Count);
             int min = Math.Min(TARGET_WIDTH, TARGET_HEIGHT);
             int hmin = (int)(min * 0.5f);
             int radius = (int)(min * 0.25f);
             int moveRadius = 10;
 
-            DrawSpriteCentered(titleText, (int)(TARGET_WIDTH * 0.5f), (int)(TARGET_HEIGHT * 0.5f));
-            DrawSpriteCentered(titleHint, (int)(TARGET_WIDTH * 0.5f), (int)(TARGET_HEIGHT * 0.5f) + 8);
-            DrawSpriteCentered(titleJoinText, (int)(TARGET_WIDTH * 0.5f), TARGET_HEIGHT - 12);
-
-            for (int i = 0; i < _mouseIds.Count; i++) {
-                MouseData mouseData = _mouseData[_mouseIds[i]];
-                (float nx, float ny) = Normalise(mouseData.lastDeltaX, mouseData.lastDeltaY);
+            for (int i = 0; i < _players.Count; i++) {
+                Player player = _players[i];
+                MouseData mouseData = player.mouseData;
                 float a = step * i;
 
-                int posX = (int)(Math.Cos(a) * radius) + hmin;
-                int posY = (int)(Math.Sin(a) * radius) + hmin;
-                DrawCircle(posX + (int)(nx * moveRadius), posY + (int)(ny * moveRadius), 2, mouseData.color);
+                float posX = ((float)Math.Cos(a) * radius) + hmin;
+                float posY = ((float)Math.Sin(a) * radius) + hmin;
+                player.x = posX;
+                player.y = posY;
 
-                if (_playerReadyState[mouseData.playerId]) {
-                    DrawSpriteCentered(SPRITE_ID.TICK, posX, posY);
+                if (!player.isReady) {
+                    player.x += (int)(mouseData.nLDX * moveRadius);
+                    player.y += (int)(mouseData.nLDY * moveRadius);
+                }
+
+                DrawCircle(player.X, player.Y, 4, player.color);
+
+                if (_players[i].isReady) {
+                    DrawSpriteCentered(SPRITE_ID.TICK, (int)player.x, (int)player.y + 5);
                 }
             }
+
+            DrawSpriteCentered(titleText, (int)(TARGET_WIDTH * 0.5f), (int)(TARGET_HEIGHT * 0.5f));
+            DrawSpriteCentered(titleJoinText, (int)(TARGET_WIDTH * 0.5f), (int)(TARGET_HEIGHT * 0.5f) + 8);
+            DrawSpriteCentered(titleHint, (int)(TARGET_WIDTH * 0.5f), TARGET_HEIGHT - 12);
         }
 
         void LobbyUpdate(GameTime gameTime) {
@@ -260,9 +288,23 @@ namespace Editor.Controls {
         }
 
         void GameUpdate(GameTime gameTime) {
-            for (int i = 0; i < _mouseIds.Count; i++) {
-                MouseData mouseData = _mouseData[_mouseIds[i]];
-                DrawCircle((int)mouseData.X, (int)mouseData.Y, 2, mouseData.color);
+            for (int i = 0; i < _players.Count; i++) {
+                Player player = _players[i];
+                MouseData mouseData = player.mouseData;
+                player.x += mouseData.nDX * _moveSpeed;
+                player.y += mouseData.nDY * _moveSpeed;
+
+                DrawCircle(player.X, player.Y, 4, player.color);
+
+                float rayCX = player.x + player.mouseData.nDX;
+                float rayCY = player.Y + player.mouseData.nDY;
+                DrawLine(player.X, player.Y, (int)rayCX, (int)rayCY, Color.Red);
+
+                if (_players[i].isReady) {
+                    DrawSpriteCentered(SPRITE_ID.TICK, (int)player.x, (int)player.y + 5);
+                }
+
+                player.mouseData.Update(gameTime);
             }
         }
 
@@ -304,6 +346,36 @@ namespace Editor.Controls {
                 for (int x = -radius; x <= radius; x++)
                     if (x * x + y * y <= radius * radius)
                         SetPixel(px + x, py + y, c);
+        }
+
+        public void DrawLine(int x, int y, int x2, int y2, Color color) {
+            int w = x2 - x;
+            int h = y2 - y;
+            int dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0;
+            if (w < 0) dx1 = -1; else if (w > 0) dx1 = 1;
+            if (h < 0) dy1 = -1; else if (h > 0) dy1 = 1;
+            if (w < 0) dx2 = -1; else if (w > 0) dx2 = 1;
+            int longest = Math.Abs(w);
+            int shortest = Math.Abs(h);
+            if (!(longest > shortest)) {
+                longest = Math.Abs(h);
+                shortest = Math.Abs(w);
+                if (h < 0) dy2 = -1; else if (h > 0) dy2 = 1;
+                dx2 = 0;
+            }
+            int numerator = longest >> 1;
+            for (int i = 0; i <= longest; i++) {
+                SetPixel(x, y, color);
+                numerator += shortest;
+                if (!(numerator < longest)) {
+                    numerator -= longest;
+                    x += dx1;
+                    y += dy1;
+                } else {
+                    x += dx2;
+                    y += dy2;
+                }
+            }
         }
 
         float Clamp(float v, float min, float max) {

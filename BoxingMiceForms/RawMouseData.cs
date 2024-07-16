@@ -1,6 +1,8 @@
-﻿using Linearstar.Windows.RawInput.Native;
+﻿using Linearstar.Windows.RawInput;
+using Linearstar.Windows.RawInput.Native;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using System;
-using Color = Microsoft.Xna.Framework.Color;
 
 namespace Editor {
     public static class RawMouseData {
@@ -19,25 +21,27 @@ namespace Editor {
             WM_MOUSEWHEEL = 0x020A
         }
 
-        static Random rnd = new Random();
-
         public class MouseData {
             public RawMouseButtonFlags mouseButtonFlags => _mouseButtonFlags;
             private RawMouseButtonFlags _mouseButtonFlags;
 
-            public int playerId => _playerId;
-            private int _playerId;
-
-            public float X;
-            public float Y;
-
             public float deltaX = 0;
             public float deltaY = 0;
+
+            public float nDX = 0;
+            public float nDY = 0;
+
+            private float x = 0, y = 0;
+            public float nX = 0;
+            public float nY = 0;
 
             public float lastDeltaX = 0;
             public float lastDeltaY = 0;
 
-            public Color color;
+            public float nLDX = 0;
+            public float nLDY = 0;
+
+            public int scroll = 0;
 
             public bool leftButton => _leftButton;
             private bool _leftButton;
@@ -46,17 +50,44 @@ namespace Editor {
             public bool middleButton => _middleButton;
             private bool _middleButton;
 
-            public MouseData(int playerId, float x = 0, float y = 0) {
-                this._playerId = playerId;
-                this.X = x;
-                this.Y = y;
-                color = new Color(rnd.Next(0, 255), rnd.Next(0, 255), rnd.Next(0, 255));
+            public readonly int playerId;
 
+            public MouseData(int playerId) {
+                this.playerId = playerId;
             }
-            public void UpdateKeys(RawMouseButtonFlags mouseButtons) {
-                this._mouseButtonFlags = mouseButtons;
 
-                switch (mouseButtons) {
+            public void Update(GameTime gameTime) {
+                this.deltaX = 0;
+                this.deltaY = 0;
+                this.nDX = 0;
+                this.nDY = 0;
+                this.x = 0;
+                this.y = 0;
+                this.nLDX = 0;
+                this.nLDY = 0;
+            }
+
+            public void UpdateKeys(RawMouse mouse) {
+                this._mouseButtonFlags = mouse.Buttons;
+
+                this.deltaX = mouse.LastX;
+                this.deltaY = mouse.LastY;
+
+                x += deltaX;
+                y += deltaY;
+
+                (nX, nY) = Normalize(x, y);
+                (nDX, nDY) = Normalize(deltaX, deltaY);
+                (nLDX, nLDY) = Normalize(lastDeltaX, lastDeltaY);
+
+                this.scroll = mouse.ButtonData;
+
+                if (mouse.LastX != 0 && mouse.LastY != 0) {
+                    this.lastDeltaX = mouse.LastX;
+                    this.lastDeltaY = mouse.LastY;
+                }
+
+                switch (this._mouseButtonFlags) {
                     case RawMouseButtonFlags.LeftButtonDown:
                         _leftButton = true;
                         break;
@@ -76,6 +107,13 @@ namespace Editor {
                         _middleButton = false;
                         break;
                 }
+            }
+
+            (float, float) Normalize(float x, float y) {
+                if (x == 0 && y == 0) return (0f, 0f);
+
+                float len = (float)Math.Sqrt(x * x + y * y);
+                return (x / len, y / len);
             }
         }
     }
