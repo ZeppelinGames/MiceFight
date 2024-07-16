@@ -16,6 +16,8 @@ using Color = Microsoft.Xna.Framework.Color;
 using Keys = Microsoft.Xna.Framework.Input.Keys;
 using Rectangle = Microsoft.Xna.Framework.Rectangle;
 using static Editor.Sprite;
+using System.Diagnostics;
+using Editor.Sprites;
 
 namespace Editor.Controls {
     public enum GAMESTATE {
@@ -31,8 +33,8 @@ namespace Editor.Controls {
         private const int DEFAULT_SCREEN_WIDTH = 1000;
         private const int DEFAULT_SCREEN_HEIGHT = 1000;
 
-        private const int TARGET_WIDTH = 128;
-        private const int TARGET_HEIGHT = 128;
+        private const int TARGET_WIDTH = 256;
+        private const int TARGET_HEIGHT = 256;
 
         private int _screenWidth;
         private int _screenHeight;
@@ -52,10 +54,12 @@ namespace Editor.Controls {
 
         Dictionary<string, MouseData> _mouseData = new Dictionary<string, MouseData>();
         List<string> _mouseIds = new List<string>();
+        List<bool> _playerReadyState = new List<bool>();
 
         // Game state vars
         GAMESTATE _gameState = GAMESTATE.TITLE;
-        int _playersReady = 0;
+       
+        Sprite titleText, titleJoinText, titleHint;
 
         public MainControl() {
             _screenWidth = DEFAULT_SCREEN_WIDTH;
@@ -67,6 +71,10 @@ namespace Editor.Controls {
             for (int i = 0; i < _clearRender.Length; i++) {
                 _clearRender[i] = BackgroundColor;
             }
+
+            titleText = FontSprite.GetText("BOXING MICE", Color.Black);
+            titleJoinText = FontSprite.GetText("CLICK LMB TO JOIN!", Color.Black);
+            titleHint = FontSprite.GetText("LMB + RMB TO READY", Color.Black);
 
             UpdateWindow();
         }
@@ -84,73 +92,64 @@ namespace Editor.Controls {
         }
 
         protected override void WndProc(ref Message m) {
-            const int WM_INPUT = 0x00FF;
+            switch (m.Msg) {
+                case (int)MouseEvents.WM_INPUT:
+                    RawInputData inputData = RawInputData.FromHandle(m.LParam);
+                    switch (inputData) {
+                        case RawInputMouseData mouse:
+                            RawInputDevice mouseDevice = mouse.Device;
 
-            // You can read inputs by processing the WM_INPUT message.
-            if (m.Msg == WM_INPUT) {
-                // Create an RawInputData from the handle stored in lParam.
-                var data = RawInputData.FromHandle(m.LParam);
+                            // The data will be an instance of RawInputMouseData
+                            // They contain the raw input data in their properties.
+                            if (mouse.Mouse.Buttons == RawMouseButtonFlags.LeftButtonDown) {
+                                RegisterMouse(mouseDevice);
+                            }
+                            if (mouse == null || !_mouseData.ContainsKey(mouseDevice.DevicePath)) return;
 
-                // You can identify the source device using Header.DeviceHandle or just Device.
-                RawInputDeviceHandle sourceDeviceHandle = data.Header.DeviceHandle;
-                RawInputDevice sourceDevice = data.Device;
+                            MouseData connected = _mouseData[mouseDevice.DevicePath];
+                            connected.UpdateKeys(mouse.Mouse.Buttons);
 
-                // The data will be an instance of RawInputMouseData
-                // They contain the raw input data in their properties.
-                switch (data) {
-                    case RawInputMouseData mouse:
-                        if (mouse == null) return;
-                        RawInputDevice mouseDevice = mouse.Device;
+                            if (!_playerReadyState[connected.playerId] && connected.leftButton && connected.rightButton) {
+                                _playerReadyState[connected.playerId] = true;
+                                Debug.WriteLine("READY!");
+                            }
 
-                        RegisterMouse(mouseDevice);
+                            connected.X += mouse.Mouse.LastX * _mouseSens;
+                            connected.Y += mouse.Mouse.LastY * _mouseSens;
 
-                        MouseData connected = _mouseData[mouseDevice.DevicePath];
+                            connected.X = Clamp(connected.X, 0, this.Size.Width);
+                            connected.Y = Clamp(connected.Y, 0, this.Size.Height);
+                            connected.deltaX = mouse.Mouse.LastX;
+                            connected.deltaY = mouse.Mouse.LastY;
 
-                        connected.Keys = (MouseKeys)m.WParam.ToInt32();
+                            if (mouse.Mouse.LastX != 0 && mouse.Mouse.LastY != 0) {
+                                connected.lastDeltaX = mouse.Mouse.LastX;
+                                connected.lastDeltaY = mouse.Mouse.LastY;
+                            }
 
-                        // Swap X & Y (it works, dont ask)
-                        connected.X += mouse.Mouse.LastY * _mouseSens;
-                        connected.Y += mouse.Mouse.LastX * _mouseSens;
-
-                        connected.X = Math.Max(Math.Min(connected.X, this.Size.Width), 0);
-                        connected.Y = Math.Max(Math.Min(connected.Y, this.Size.Height), 0);
-
-                        connected.deltaX = mouse.Mouse.LastY;
-                        connected.deltaY = mouse.Mouse.LastX;
-
-                        if (mouse.Mouse.LastX != 0 && mouse.Mouse.LastY != 0) {
-                            connected.lastDeltaX = mouse.Mouse.LastY;
-                            connected.lastDeltaY = mouse.Mouse.LastX;
-                        }
-
-                        break;
-                }
+                            break;
+                    }
+                    break;
             }
-
             base.WndProc(ref m);
         }
 
+        int playerId = 0;
         void RegisterMouse(RawInputDevice device) {
             if (!_mouseData.ContainsKey(device.DevicePath)) {
+                Debug.WriteLine($"Added mouse: {device.DevicePath} {device.ProductName}");
+                
+                MouseData mouseData = new MouseData(playerId, TARGET_WIDTH / 2, TARGET_HEIGHT / 2);
+                playerId++;
+                
                 _mouseIds.Add(device.DevicePath);
-                _mouseData.Add(device.DevicePath, new MouseData(TARGET_WIDTH / 2, TARGET_HEIGHT / 2));
+                _mouseData.Add(device.DevicePath, mouseData);
+                _playerReadyState.Add(false);
             }
         }
 
         protected override void Initialize() {
             _renderTarget = new Texture2D(Editor.GraphicsDevice, TARGET_WIDTH, TARGET_HEIGHT);
-
-            /* Screen test
-            for (int x = 0; x < TARGET_WIDTH; x++)
-            {
-                for (int y = 0; y < TARGET_HEIGHT; y++)
-                {
-                    SetPixel(x, y, x == y ? Color.Red : Color.White);
-                }
-            }
-            SetPixel(0, 0, Color.Red);
-            SetPixel(TARGET_WIDTH - 1, TARGET_HEIGHT - 1, Color.Red); 
-            */
 
             _renderTarget.SetData(_render);
 
@@ -205,7 +204,7 @@ namespace Editor.Controls {
             System.Drawing.Point formCenter = new System.Drawing.Point(
              MainForm.instance.Location.X + (int)(MainForm.instance.Width * 0.5f),
              MainForm.instance.Location.Y + (int)(MainForm.instance.Height * 0.5f)
-         );
+            );
 
             Cursor.Position = formCenter;
 
@@ -231,17 +230,28 @@ namespace Editor.Controls {
         }
 
         void TitleUpdate(GameTime gameTime) {
-            float step = (float)Math.PI / (_mouseIds.Count - 1);
+            float step = (float)(Math.PI * 2) / Math.Max(1, _mouseIds.Count);
             int min = Math.Min(TARGET_WIDTH, TARGET_HEIGHT);
             int hmin = (int)(min * 0.5f);
             int radius = (int)(min * 0.25f);
             int moveRadius = 10;
 
+            DrawSpriteCentered(titleText, (int)(TARGET_WIDTH * 0.5f), (int)(TARGET_HEIGHT * 0.5f));
+            DrawSpriteCentered(titleHint, (int)(TARGET_WIDTH * 0.5f), (int)(TARGET_HEIGHT * 0.5f) + 8);
+            DrawSpriteCentered(titleJoinText, (int)(TARGET_WIDTH * 0.5f), TARGET_HEIGHT - 12);
+
             for (int i = 0; i < _mouseIds.Count; i++) {
                 MouseData mouseData = _mouseData[_mouseIds[i]];
                 (float nx, float ny) = Normalise(mouseData.lastDeltaX, mouseData.lastDeltaY);
                 float a = step * i;
-                DrawCircle((int)(Math.Cos(a) * radius) + hmin + (int)(nx * moveRadius), (int)(Math.Sin(a) * radius) + hmin + (int)(ny * moveRadius), 2, mouseData.color);
+
+                int posX = (int)(Math.Cos(a) * radius) + hmin;
+                int posY = (int)(Math.Sin(a) * radius) + hmin;
+                DrawCircle(posX + (int)(nx * moveRadius), posY + (int)(ny * moveRadius), 2, mouseData.color);
+
+                if (_playerReadyState[mouseData.playerId]) {
+                    DrawSpriteCentered(SPRITE_ID.TICK, posX, posY);
+                }
             }
         }
 
@@ -258,12 +268,21 @@ namespace Editor.Controls {
 
         void DrawSprite(SPRITE_ID spriteId, int xPos, int yPos) {
             if (Sprite.GetSprite(spriteId, out Sprite sprite)) {
-                for (int x = 0; x < sprite.sprite.Length; x++) {
-                    for (int y = 0; y < sprite.sprite[x].Length; y++) {
-                        if (sprite.sprite[x][y] != -1) {
-                            SetPixel(x + xPos, y + yPos, sprite[x, y]);
-                        }
-                    }
+                DrawSprite(sprite, xPos, yPos);
+            }
+        }
+        void DrawSpriteCentered(SPRITE_ID spriteId, int xPos, int yPos) {
+            if (Sprite.GetSprite(spriteId, out Sprite sprite)) {
+                DrawSpriteCentered(sprite, xPos, yPos);
+            }
+        }
+        void DrawSpriteCentered(Sprite sprite, int xPos, int yPos) {
+            DrawSprite(sprite, xPos - (int)(sprite.spriteWidth * 0.5f), yPos);
+        }
+        void DrawSprite(Sprite sprite, int xPos, int yPos) {
+            for (int y = 0; y < sprite.sprite.Length; y++) {
+                for (int x = 0; x < sprite.sprite[y].Length; x++) {
+                    SetPixel(x + xPos, y + yPos, sprite[y, x]);
                 }
             }
         }
@@ -275,7 +294,7 @@ namespace Editor.Controls {
 
             if (x >= 0 && x < TARGET_WIDTH) {
                 if (y >= 0 && y < TARGET_HEIGHT) {
-                    _render[y + (x * TARGET_WIDTH)] = c;
+                    _render[x + (y * TARGET_WIDTH)] = c;
                 }
             }
         }
@@ -292,6 +311,8 @@ namespace Editor.Controls {
         }
 
         (float, float) Normalise(float x, float y) {
+            if (x == 0 && y == 0) return (x, y);
+
             float dist = (float)Math.Sqrt(x * x + y * y);
             return (x / dist, y / dist);
         }
