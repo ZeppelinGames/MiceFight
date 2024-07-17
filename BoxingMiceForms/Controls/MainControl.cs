@@ -18,11 +18,11 @@ using Rectangle = Microsoft.Xna.Framework.Rectangle;
 using static Editor.Sprite;
 using System.Diagnostics;
 using Editor.Sprites;
+using SharpDX;
 
 namespace Editor.Controls {
     public enum GAMESTATE {
         TITLE,
-        WAITING_FOR_PLAYERS,
         IN_GAME,
         GAMEOVER
     };
@@ -55,6 +55,8 @@ namespace Editor.Controls {
 
         Dictionary<string, Player> _playerPath = new Dictionary<string, Player>();
         List<Player> _players = new List<Player>();
+
+        List<Bullet> _bullets = new List<Bullet>();
 
         // Game state vars
         GAMESTATE _gameState = GAMESTATE.TITLE;
@@ -110,44 +112,77 @@ namespace Editor.Controls {
                     RawInputData inputData = RawInputData.FromHandle(m.LParam);
                     switch (inputData) {
                         case RawInputMouseData mouse:
-                            RawInputDevice mouseDevice = mouse.Device;
-
-                            // The data will be an instance of RawInputMouseData
-                            // They contain the raw input data in their properties.
-                            if (mouse.Mouse.Buttons == RawMouseButtonFlags.LeftButtonDown) {
-                                RegisterMouse(mouseDevice);
-                            }
-                            if (mouse == null || !_playerPath.ContainsKey(mouseDevice.DevicePath)) return;
-
-                            MouseData connected = _playerPath[mouseDevice.DevicePath].mouseData;
-                            connected.UpdateKeys(mouse.Mouse);
-
-                            Player p = _players[connected.playerId];
-                            if (!p.isReady) {
-                                if (connected.scroll > 0) {
-                                    p.playerColorIndex++;
-                                    p.playerColorIndex = p.playerColorIndex >= _playerColors.Length ? 0 : p.playerColorIndex;
-
-                                    p.color = _playerColors[p.playerColorIndex];
-                                }
-                                if (connected.scroll < 0) {
-                                    p.playerColorIndex--;
-                                    p.playerColorIndex = p.playerColorIndex < 0 ? _playerColors.Length - 1 : p.playerColorIndex;
-                                    p.color = _playerColors[p.playerColorIndex];
-                                }
-                            }
-
-                            // Ready up
-                            if (connected.leftButton && connected.rightButton) {
-                                _players[connected.playerId].isReady = !_players[connected.playerId].isReady;
-                                Debug.WriteLine("READY!");
-                            }
-
+                            InputState(mouse);
                             break;
                     }
                     break;
             }
             base.WndProc(ref m);
+        }
+
+        void InputState(RawInputMouseData mouse) {
+            switch (_gameState) {
+                case GAMESTATE.TITLE:
+                    // Draw title
+                    TitleInput(mouse);
+                    break;
+                case GAMESTATE.IN_GAME:
+                    GameInput(mouse);
+                    break;
+                case GAMESTATE.GAMEOVER:
+                    break;
+            }
+        }
+
+        void TitleInput(RawInputMouseData mouse) {
+            RawInputDevice mouseDevice = mouse.Device;
+            // The data will be an instance of RawInputMouseData
+            // They contain the raw input data in their properties.
+            if (mouse.Mouse.Buttons == RawMouseButtonFlags.LeftButtonDown) {
+                RegisterMouse(mouseDevice);
+            }
+            if (mouse == null || !_playerPath.ContainsKey(mouseDevice.DevicePath)) return;
+
+            MouseData connected = _playerPath[mouseDevice.DevicePath].mouseData;
+            connected.UpdateKeys(mouse.Mouse);
+
+            Player p = _players[connected.playerId];
+            if (!p.isReady) {
+                if (connected.scroll > 0) {
+                    p.playerColorIndex++;
+                    p.playerColorIndex = p.playerColorIndex >= _playerColors.Length ? 0 : p.playerColorIndex;
+
+                    p.color = _playerColors[p.playerColorIndex];
+                }
+                if (connected.scroll < 0) {
+                    p.playerColorIndex--;
+                    p.playerColorIndex = p.playerColorIndex < 0 ? _playerColors.Length - 1 : p.playerColorIndex;
+                    p.color = _playerColors[p.playerColorIndex];
+                }
+            }
+
+            // Ready up
+            if (connected.leftButton && connected.rightButton) {
+                _players[connected.playerId].isReady = !_players[connected.playerId].isReady;
+            }
+        }
+
+        void GameInput(RawInputMouseData mouse) {
+            RawInputDevice mouseDevice = mouse.Device;
+            if (mouse == null || !_playerPath.ContainsKey(mouseDevice.DevicePath)) return;
+
+            MouseData connected = _playerPath[mouseDevice.DevicePath].mouseData;
+            connected.UpdateKeys(mouse.Mouse);
+
+            Player p = _players[connected.playerId];
+            if (connected.leftButton) {
+                SpawnBullet(p);
+            }
+        }
+
+        void SpawnBullet(Player player) {
+            Bullet b = new Bullet(player);
+            _bullets.Add(b);
         }
 
         int playerId = 0;
@@ -206,9 +241,6 @@ namespace Editor.Controls {
                     // Draw title
                     TitleUpdate(gameTime);
                     break;
-                case GAMESTATE.WAITING_FOR_PLAYERS:
-                    LobbyUpdate(gameTime);
-                    break;
                 case GAMESTATE.IN_GAME:
                     GameUpdate(gameTime);
                     break;
@@ -216,6 +248,15 @@ namespace Editor.Controls {
                     break;
             }
 
+            for (int i = 0; i < _bullets.Count; i++) {
+                _bullets[i].Update(gameTime);
+                DrawLine(
+                    _bullets[i].X,
+                    _bullets[i].Y,
+                    _bullets[i].X + (int)_bullets[i].dx,
+                    _bullets[i].Y + (int)_bullets[i].dy,
+                    _players[_bullets[i].playerId].color);
+            }
             for (int i = 0; i < _players.Count; i++) {
                 _players[i].mouseData.Update(gameTime);
             }
@@ -256,6 +297,7 @@ namespace Editor.Controls {
             int radius = (int)(min * 0.25f);
             int moveRadius = 10;
 
+            bool allReady = _players.Count >= 2;
             for (int i = 0; i < _players.Count; i++) {
                 Player player = _players[i];
                 MouseData mouseData = player.mouseData;
@@ -273,18 +315,24 @@ namespace Editor.Controls {
 
                 DrawCircle(player.X, player.Y, 4, player.color);
 
+                float rayCX = player.x + player.mouseData.nDX;
+                float rayCY = player.Y + player.mouseData.nDY;
+                DrawLine(player.X, player.Y, (int)rayCX, (int)rayCY, Color.Red);
+
                 if (_players[i].isReady) {
                     DrawSpriteCentered(SPRITE_ID.TICK, (int)player.x, (int)player.y + 5);
+                } else {
+                    allReady = false;
                 }
+            }
+
+            if (allReady) {
+                _gameState = GAMESTATE.IN_GAME;
             }
 
             DrawSpriteCentered(titleText, (int)(TARGET_WIDTH * 0.5f), (int)(TARGET_HEIGHT * 0.5f));
             DrawSpriteCentered(titleJoinText, (int)(TARGET_WIDTH * 0.5f), (int)(TARGET_HEIGHT * 0.5f) + 8);
             DrawSpriteCentered(titleHint, (int)(TARGET_WIDTH * 0.5f), TARGET_HEIGHT - 12);
-        }
-
-        void LobbyUpdate(GameTime gameTime) {
-
         }
 
         void GameUpdate(GameTime gameTime) {
@@ -299,20 +347,9 @@ namespace Editor.Controls {
                 float rayCX = player.x + player.mouseData.nDX;
                 float rayCY = player.Y + player.mouseData.nDY;
                 DrawLine(player.X, player.Y, (int)rayCX, (int)rayCY, Color.Red);
-
-                if (_players[i].isReady) {
-                    DrawSpriteCentered(SPRITE_ID.TICK, (int)player.x, (int)player.y + 5);
-                }
-
-                player.mouseData.Update(gameTime);
             }
         }
 
-        void DrawSprite(SPRITE_ID spriteId, int xPos, int yPos) {
-            if (Sprite.GetSprite(spriteId, out Sprite sprite)) {
-                DrawSprite(sprite, xPos, yPos);
-            }
-        }
         void DrawSpriteCentered(SPRITE_ID spriteId, int xPos, int yPos) {
             if (Sprite.GetSprite(spriteId, out Sprite sprite)) {
                 DrawSpriteCentered(sprite, xPos, yPos);
@@ -376,6 +413,10 @@ namespace Editor.Controls {
                     y += dy2;
                 }
             }
+        }
+
+        bool CircleCircleIntersect() {
+            return false;
         }
 
         float Clamp(float v, float min, float max) {
