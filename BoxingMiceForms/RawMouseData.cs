@@ -31,7 +31,7 @@ namespace Editor {
             public float nDX = 0;
             public float nDY = 0;
 
-            private float x = 0, y = 0;
+            public float x = 0, y = 0;
             public float nX = 0;
             public float nY = 0;
 
@@ -54,17 +54,6 @@ namespace Editor {
 
             public MouseData(int playerId) {
                 this.playerId = playerId;
-            }
-
-            public void Update(GameTime gameTime) {
-                this.deltaX = 0;
-                this.deltaY = 0;
-                this.nDX = 0;
-                this.nDY = 0;
-                this.x = 0;
-                this.y = 0;
-                this.nLDX = 0;
-                this.nLDY = 0;
             }
 
             public void UpdateKeys(RawMouse mouse) {

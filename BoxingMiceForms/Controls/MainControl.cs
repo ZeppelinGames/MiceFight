@@ -173,14 +173,11 @@ namespace Editor.Controls {
 
             MouseData connected = _playerPath[mouseDevice.DevicePath].mouseData;
             connected.UpdateKeys(mouse.Mouse);
-
-            Player p = _players[connected.playerId];
-            if (connected.leftButton) {
-                SpawnBullet(p);
-            }
         }
 
         void SpawnBullet(Player player) {
+            if (player.mouseData.nLDX == 0 && player.mouseData.nLDY == 0) return;
+
             Bullet b = new Bullet(player);
             _bullets.Add(b);
         }
@@ -258,7 +255,8 @@ namespace Editor.Controls {
                     _players[_bullets[i].playerId].color);
             }
             for (int i = 0; i < _players.Count; i++) {
-                _players[i].mouseData.Update(gameTime);
+                // Run last
+                _players[i].Update(gameTime);
             }
 
             // Lock mouse center screen
@@ -290,6 +288,7 @@ namespace Editor.Controls {
             base.Draw();
         }
 
+        float rectA = 0;
         void TitleUpdate(GameTime gameTime) {
             float step = (float)(Math.PI * 2) / Math.Max(1, _players.Count);
             int min = Math.Min(TARGET_WIDTH, TARGET_HEIGHT);
@@ -319,6 +318,11 @@ namespace Editor.Controls {
                 float rayCY = player.Y + player.mouseData.nDY;
                 DrawLine(player.X, player.Y, (int)rayCX, (int)rayCY, Color.Red);
 
+                Sprite.GetSprite(SPRITE_ID.RECT8, out Sprite rect);
+                DrawRotatedSprite(rect, (int)(TARGET_WIDTH * 0.5f), (int)(TARGET_HEIGHT * 0.5f), rectA);
+                rectA += (float)gameTime.ElapsedGameTime.TotalSeconds * 5f;
+                Debug.WriteLine(rectA);
+
                 if (_players[i].isReady) {
                     DrawSpriteCentered(SPRITE_ID.TICK, (int)player.x, (int)player.y + 5);
                 } else {
@@ -338,16 +342,49 @@ namespace Editor.Controls {
         void GameUpdate(GameTime gameTime) {
             for (int i = 0; i < _players.Count; i++) {
                 Player player = _players[i];
+
+                if (!player.isAlive) {
+                    DrawCircle(player.X, player.Y, Player.size, Color.Gray);
+                    continue;
+                }
+
                 MouseData mouseData = player.mouseData;
+
                 player.x += mouseData.nDX * _moveSpeed;
                 player.y += mouseData.nDY * _moveSpeed;
 
-                DrawCircle(player.X, player.Y, 4, player.color);
+                DrawCircle(player.X, player.Y, Player.size, player.color);
 
                 float rayCX = player.x + player.mouseData.nDX;
                 float rayCY = player.Y + player.mouseData.nDY;
                 DrawLine(player.X, player.Y, (int)rayCX, (int)rayCY, Color.Red);
+
+                if (_players[i].mouseData.rightButton) {
+                    DrawRotatedSprite(player.shieldSprite, player.X, player.Y, player.shieldRotation);
+                } else {
+                    if (_players[i].mouseData.leftButton) {
+                        SpawnBullet(_players[i]);
+                    }
+                }
             }
+
+            // Check if you shot someone
+            for (int j = 0; j < _players.Count; j++) {
+                for (int i = 0; i < _bullets.Count; i++) {
+                    if (_bullets[i].playerId == _players[j].id) continue;
+                    if (CirclePointIntersect(
+                        _bullets[i].x,
+                        _bullets[i].y,
+                        _players[j].x,
+                        _players[j].y,
+                        Player.size)) {
+                        Debug.WriteLine($"{_bullets[i].playerId} killed {_players[j].id}");
+                        _players[j].Kill();
+                    }
+                }
+            }
+
+            // Check if they all dead
         }
 
         void DrawSpriteCentered(SPRITE_ID spriteId, int xPos, int yPos) {
@@ -362,6 +399,21 @@ namespace Editor.Controls {
             for (int y = 0; y < sprite.sprite.Length; y++) {
                 for (int x = 0; x < sprite.sprite[y].Length; x++) {
                     SetPixel(x + xPos, y + yPos, sprite[y, x]);
+                }
+            }
+        }
+
+        void DrawRotatedSprite(Sprite sprite, int xPos, int yPos, float angle) {
+            float hWidth = sprite.spriteWidth * 0.5f;
+            float hHeight = sprite.spriteHeight * 0.5f;
+
+            for (int y = 0; y < sprite.sprite.Length; y++) {
+                for (int x = 0; x < sprite.sprite[y].Length; x++) {
+                    // Rotate point
+                    (float rx, float ry) = RotatePoint(x - hWidth, y - hHeight, angle);
+
+                    // Draw rotated point
+                    SetPixel((int)rx + xPos, (int)ry + yPos, sprite[y, x]);
                 }
             }
         }
@@ -383,6 +435,15 @@ namespace Editor.Controls {
                 for (int x = -radius; x <= radius; x++)
                     if (x * x + y * y <= radius * radius)
                         SetPixel(px + x, py + y, c);
+        }
+
+        public bool CirclePointIntersect(float x, float y, float cx, float cy, float r) {
+            return Math.Sqrt(Math.Pow(cx - x, 2) + Math.Pow(cy - y, 2)) < r;
+        }
+
+        public (float, float) RotatePoint(float x, float y, float angle) {
+            return (x * (float)Math.Cos(angle) - y * (float)Math.Sin(angle),
+                x * (float)Math.Sin(angle) + y * (float)Math.Cos(angle));
         }
 
         public void DrawLine(int x, int y, int x2, int y2, Color color) {

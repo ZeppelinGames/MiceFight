@@ -128,6 +128,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RawMouseData.cs" />
     <Compile Include="Sprites\FontSprite.cs" />
+    <Compile Include="Sprites\RectSprite.cs" />
     <Compile Include="Sprites\Sprite.cs" />
     <Compile Include="Sprites\TickSprite.cs" />
     <EmbeddedResource Include="Form1.resx">

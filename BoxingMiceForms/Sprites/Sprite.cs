@@ -6,14 +6,17 @@ using Microsoft.Xna.Framework;
 namespace Editor {
     public class Sprite {
         public enum SPRITE_ID {
-            TICK
+            TICK,
+            RECT8
         }
 
         static Dictionary<SPRITE_ID, Sprite> _sprites = new Dictionary<SPRITE_ID, Sprite>()
         {
-            { SPRITE_ID.TICK, new TickSprite()}
+            { SPRITE_ID.TICK, new TickSprite()},
+            { SPRITE_ID.RECT8, new RectSprite(16)}
         };
 
+        public Color[] palette => _palette;
         private Color[] _palette;
 
         public int[][] sprite => _sprite;
@@ -41,6 +44,10 @@ namespace Editor {
                     this._spriteWidth = sprite[i].Length;
                 }
             }
+        }
+
+        protected void UpdatePalette(Color[] palette) {
+            this._palette = palette;
         }
 
         public Color this[int x, int y] {
