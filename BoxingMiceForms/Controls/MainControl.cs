@@ -242,6 +242,7 @@ namespace Editor.Controls {
                     GameUpdate(gameTime);
                     break;
                 case GAMESTATE.GAMEOVER:
+                    GameoverUpdate(gameTime);
                     break;
             }
 
@@ -369,6 +370,7 @@ namespace Editor.Controls {
             }
 
             // Check if you shot someone
+            int alivePlayerCount = 0;
             for (int j = 0; j < _players.Count; j++) {
                 for (int i = 0; i < _bullets.Count; i++) {
                     if (_bullets[i].playerId == _players[j].id) continue;
@@ -382,9 +384,23 @@ namespace Editor.Controls {
                         _players[j].Kill();
                     }
                 }
+
+                if (_players[j].isAlive) {
+                    alivePlayerCount++;
+                }
             }
 
-            // Check if they all dead
+            if (alivePlayerCount <= 1) {
+                _gameState = GAMESTATE.GAMEOVER;
+            }
+        }
+
+        void GameoverUpdate(GameTime gameTime) {
+            DrawSpriteCentered(titleText, (int)(TARGET_WIDTH * 0.5f), (int)(TARGET_HEIGHT * 0.5f));
+            for (int i = 0; i < _players.Count; i++) {
+                Player player = _players[i];
+                DrawCircle(player.X, player.Y, Player.size, player.isAlive ? player.color : Color.Gray);
+            }
         }
 
         void DrawSpriteCentered(SPRITE_ID spriteId, int xPos, int yPos) {
