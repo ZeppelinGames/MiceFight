@@ -371,6 +371,7 @@ namespace Editor.Controls {
             }
 
             // Check if you shot someone
+            List<Bullet> blockedBullets = new List<Bullet>();   
             int alivePlayerCount = 0;
             for (int j = 0; j < _players.Count; j++) {
                 for (int i = 0; i < _bullets.Count; i++) {
@@ -381,14 +382,25 @@ namespace Editor.Controls {
                         _players[j].x,
                         _players[j].y,
                         Player.size)) {
-                        Debug.WriteLine($"{_bullets[i].playerId} killed {_players[j].id}");
-                        _players[j].Kill();
+
+                        // Blocking?
+                        if (_players[j].mouseData.rightButton) {
+                            blockedBullets.Add(_bullets[i]);
+                        } else {
+                            Debug.WriteLine($"{_bullets[i].playerId} killed {_players[j].id}");
+                            _players[j].Kill();
+                        }
                     }
                 }
 
                 if (_players[j].isAlive) {
                     alivePlayerCount++;
                 }
+            }
+
+            // Get rid of them blocked ones
+            for (int i = 0; i < blockedBullets.Count; i++) {
+                _bullets.Remove(blockedBullets[i]);
             }
 
             if (alivePlayerCount <= 1) {
