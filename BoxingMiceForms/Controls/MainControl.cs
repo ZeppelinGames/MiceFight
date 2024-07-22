@@ -61,7 +61,7 @@ namespace Editor.Controls {
         // Game state vars
         GAMESTATE _gameState = GAMESTATE.TITLE;
 
-        Sprite titleText, titleJoinText, titleHint;
+        Sprite titleText, titleJoinText, titleHint, gameoverText;
 
         Color[] _playerColors = new Color[] {
             new Color(222, 110, 79),
@@ -90,6 +90,7 @@ namespace Editor.Controls {
             titleText = FontSprite.GetText("BOXING MICE", Color.Black);
             titleJoinText = FontSprite.GetText("CLICK LMB TO JOIN!", Color.Black);
             titleHint = FontSprite.GetText("LMB + RMB TO READY", Color.Black);
+            gameoverText = FontSprite.GetText("GAMEOVER!", Color.Black);
 
             UpdateWindow();
         }
@@ -396,7 +397,7 @@ namespace Editor.Controls {
         }
 
         void GameoverUpdate(GameTime gameTime) {
-            DrawSpriteCentered(titleText, (int)(TARGET_WIDTH * 0.5f), (int)(TARGET_HEIGHT * 0.5f));
+            DrawSpriteCentered(gameoverText, (int)(TARGET_WIDTH * 0.5f), (int)(TARGET_HEIGHT * 0.5f));
             for (int i = 0; i < _players.Count; i++) {
                 Player player = _players[i];
                 DrawCircle(player.X, player.Y, Player.size, player.isAlive ? player.color : Color.Gray);
