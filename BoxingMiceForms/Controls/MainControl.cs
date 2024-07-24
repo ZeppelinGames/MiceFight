@@ -55,6 +55,7 @@ namespace Editor.Controls {
 
         Dictionary<string, Player> _playerPath = new Dictionary<string, Player>();
         List<Player> _players = new List<Player>();
+        int playerId = 0;
 
         List<Bullet> _bullets = new List<Bullet>();
 
@@ -131,6 +132,7 @@ namespace Editor.Controls {
                     GameInput(mouse);
                     break;
                 case GAMESTATE.GAMEOVER:
+                    GameInput(mouse);
                     break;
             }
         }
@@ -142,6 +144,7 @@ namespace Editor.Controls {
             if (mouse.Mouse.Buttons == RawMouseButtonFlags.LeftButtonDown) {
                 RegisterMouse(mouseDevice);
             }
+            if (mouseDevice == null) return;
             if (mouse == null || !_playerPath.ContainsKey(mouseDevice.DevicePath)) return;
 
             MouseData connected = _playerPath[mouseDevice.DevicePath].mouseData;
@@ -170,6 +173,7 @@ namespace Editor.Controls {
 
         void GameInput(RawInputMouseData mouse) {
             RawInputDevice mouseDevice = mouse.Device;
+            if (mouseDevice == null) return;
             if (mouse == null || !_playerPath.ContainsKey(mouseDevice.DevicePath)) return;
 
             MouseData connected = _playerPath[mouseDevice.DevicePath].mouseData;
@@ -183,8 +187,8 @@ namespace Editor.Controls {
             _bullets.Add(b);
         }
 
-        int playerId = 0;
         void RegisterMouse(RawInputDevice device) {
+            if (device == null) return;
             if (!_playerPath.ContainsKey(device.DevicePath)) {
                 Debug.WriteLine($"Added mouse: {device.DevicePath} {device.ProductName}");
 
@@ -290,7 +294,6 @@ namespace Editor.Controls {
             base.Draw();
         }
 
-        float rectA = 0;
         void TitleUpdate(GameTime gameTime) {
             float step = (float)(Math.PI * 2) / Math.Max(1, _players.Count);
             int min = Math.Min(TARGET_WIDTH, TARGET_HEIGHT);
@@ -319,11 +322,6 @@ namespace Editor.Controls {
                 float rayCX = player.x + player.mouseData.nDX;
                 float rayCY = player.Y + player.mouseData.nDY;
                 DrawLine(player.X, player.Y, (int)rayCX, (int)rayCY, Color.Red);
-
-                Sprite.GetSprite(SPRITE_ID.RECT8, out Sprite rect);
-                DrawRotatedSprite(rect, (int)(TARGET_WIDTH * 0.5f), (int)(TARGET_HEIGHT * 0.5f), rectA);
-                rectA += (float)gameTime.ElapsedGameTime.TotalSeconds * 5f;
-                Debug.WriteLine(rectA);
 
                 if (_players[i].isReady) {
                     DrawSpriteCentered(SPRITE_ID.TICK, (int)player.x, (int)player.y + 5);
@@ -410,10 +408,24 @@ namespace Editor.Controls {
 
         void GameoverUpdate(GameTime gameTime) {
             DrawSpriteCentered(gameoverText, (int)(TARGET_WIDTH * 0.5f), (int)(TARGET_HEIGHT * 0.5f));
+            DrawSpriteCentered(titleHint, (int)(TARGET_WIDTH * 0.5f), (int)(TARGET_HEIGHT * 0.5f) + 8);
+
             for (int i = 0; i < _players.Count; i++) {
                 Player player = _players[i];
                 DrawCircle(player.X, player.Y, Player.size, player.isAlive ? player.color : Color.Gray);
+
+                if (player.mouseData.leftButton && player.mouseData.rightButton) {
+                    ResetGame();
+                }
             }
+        }
+
+        void ResetGame() {
+            _players.Clear();
+            _bullets.Clear();
+            _playerPath.Clear();
+            playerId = 0;
+            _gameState = GAMESTATE.TITLE;
         }
 
         void DrawSpriteCentered(SPRITE_ID spriteId, int xPos, int yPos) {
