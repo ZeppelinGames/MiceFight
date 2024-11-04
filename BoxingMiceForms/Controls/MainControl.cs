@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -11,14 +12,12 @@ using Microsoft.Xna.Framework.Input;
 using MonoGame.Forms.Controls;
 using Gma.System.MouseKeyHook;
 
-using static Editor.RawMouseData;
-using Color = Microsoft.Xna.Framework.Color;
 using Keys = Microsoft.Xna.Framework.Input.Keys;
+using Color = Microsoft.Xna.Framework.Color;
 using Rectangle = Microsoft.Xna.Framework.Rectangle;
-using static Editor.Sprite;
-using System.Diagnostics;
 using Editor.Sprites;
-using SharpDX;
+using static Editor.Sprite;
+using static Editor.RawMouseData;
 
 namespace Editor.Controls {
     public enum GAMESTATE {
@@ -31,27 +30,29 @@ namespace Editor.Controls {
         static Random rnd = new Random();
         private IKeyboardMouseEvents _mouseHook;
 
-        private const int DEFAULT_SCREEN_WIDTH = 1000;
-        private const int DEFAULT_SCREEN_HEIGHT = 1000;
+        private RenderCanvas _canvas;
 
-        private const int TARGET_WIDTH = 256;
-        private const int TARGET_HEIGHT = 256;
+        //private const int DEFAULT_SCREEN_WIDTH = 1000;
+        //private const int DEFAULT_SCREEN_HEIGHT = 1000;
 
-        private int _screenWidth;
-        private int _screenHeight;
+        //private const int RenderCanvas.TARGET_WIDTH = 256;
+        //private const int RenderCanvas.TARGET_HEIGHT = 256;
 
-        private int _renderWidth;
-        private int _renderHeight;
+        //private int _screenWidth;
+        //private int _screenHeight;
+
+        //private int _renderWidth;
+        //private int _renderHeight;
 
         private float _moveSpeed = 0.5f;
 
-        private static Color BackgroundColor = new Color(241, 233, 210);
+        //private static Color BackgroundColor = new Color(241, 233, 210);
 
-        Texture2D _renderTarget;
-        Rectangle _renderTargetRect;
+        //Texture2D _renderTarget;
+        //Rectangle _renderTargetRect;
 
-        Color[] _render = new Color[TARGET_WIDTH * TARGET_HEIGHT];
-        Color[] _clearRender = new Color[TARGET_WIDTH * TARGET_HEIGHT];
+        //Color[] _render = new Color[RenderCanvas.TARGET_WIDTH * RenderCanvas.TARGET_HEIGHT];
+        //Color[] _clearRender = new Color[RenderCanvas.TARGET_WIDTH * RenderCanvas.TARGET_HEIGHT];
 
         Dictionary<string, Player> _playerPath = new Dictionary<string, Player>();
         List<Player> _players = new List<Player>();
@@ -78,15 +79,12 @@ namespace Editor.Controls {
         };
 
         public MainControl() {
-            _screenWidth = DEFAULT_SCREEN_WIDTH;
-            _screenHeight = DEFAULT_SCREEN_HEIGHT;
-
             _mouseHook = Hook.GlobalEvents();
             _mouseHook.MouseDownExt += GlobalHookMousePress;
 
-            for (int i = 0; i < _clearRender.Length; i++) {
-                _clearRender[i] = BackgroundColor;
-            }
+            //for (int i = 0; i < _clearRender.Length; i++) {
+            //    _clearRender[i] = BackgroundColor;
+            //}
 
             titleText = FontSprite.GetText("BOXING MICE", Color.Black);
             titleJoinText = FontSprite.GetText("CLICK LMB TO JOIN!", Color.Black);
@@ -203,32 +201,15 @@ namespace Editor.Controls {
         }
 
         protected override void Initialize() {
-            _renderTarget = new Texture2D(Editor.GraphicsDevice, TARGET_WIDTH, TARGET_HEIGHT);
-            _renderTarget.SetData(_render);
+            _canvas = new RenderCanvas(Editor.GraphicsDevice);
 
             UpdateWindow();
             base.Initialize();
         }
 
         public void UpdateWindow() {
-            if (MainForm.instance == null || MainForm.instance.mainControl == null) return;
-
-            Size s = MainForm.instance.mainControl.Size;
-            _screenWidth = s.Width;
-            _screenHeight = s.Height;
-
-            float scale = Math.Min(_screenWidth / TARGET_WIDTH, _screenHeight / TARGET_HEIGHT);
-            int newWidth = (int)(TARGET_WIDTH * scale);
-            int newHeight = (int)(TARGET_HEIGHT * scale);
-
-            _renderWidth = (int)Clamp(newWidth, 0, 2048);
-            _renderHeight = (int)Clamp(newHeight, 0, 2048);
-
-            _renderTargetRect = new Rectangle(
-                (_screenWidth - _renderWidth) / 2,
-                (_screenHeight - _renderHeight) / 2,
-                _renderWidth,
-                _renderHeight);
+            if (_canvas == null) return;
+            _canvas.Resize();
         }
 
         protected override void Update(GameTime gameTime) {
@@ -253,7 +234,7 @@ namespace Editor.Controls {
 
             for (int i = 0; i < _bullets.Count; i++) {
                 _bullets[i].Update(gameTime);
-                DrawLine(
+                _canvas.DrawLine(
                     _bullets[i].X,
                     _bullets[i].Y,
                     _bullets[i].X + (int)_bullets[i].dx,
@@ -277,26 +258,15 @@ namespace Editor.Controls {
         }
 
         protected override void Draw() {
-            // Update texture
-            _renderTarget.SetData(_render);
-
-            // Clear screen
-            Editor.GraphicsDevice.Clear(Color.Black);
-
-            // Draw render texture
-            Editor.spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-            Editor.spriteBatch.Draw(_renderTarget, _renderTargetRect, Color.White);
-            Editor.spriteBatch.End();
-
-            // Clear draw buffer
-            Array.Copy(_clearRender, _render, _render.Length);
+            // Canvas draw
+            _canvas.Draw(Editor.spriteBatch);
 
             base.Draw();
         }
 
         void TitleUpdate(GameTime gameTime) {
             float step = (float)(Math.PI * 2) / Math.Max(1, _players.Count);
-            int min = Math.Min(TARGET_WIDTH, TARGET_HEIGHT);
+            int min = Math.Min(RenderCanvas.TARGET_WIDTH, RenderCanvas.TARGET_HEIGHT);
             int hmin = (int)(min * 0.5f);
             int radius = (int)(min * 0.25f);
             int moveRadius = 10;
@@ -317,14 +287,14 @@ namespace Editor.Controls {
                     player.y += (int)(mouseData.nLDY * moveRadius);
                 }
 
-                DrawCircle(player.X, player.Y, 4, player.color);
+                _canvas.DrawCircle(player.X, player.Y, 4, player.color);
 
                 float rayCX = player.x + player.mouseData.nDX;
                 float rayCY = player.Y + player.mouseData.nDY;
-                DrawLine(player.X, player.Y, (int)rayCX, (int)rayCY, Color.Red);
+                _canvas.DrawLine(player.X, player.Y, (int)rayCX, (int)rayCY, Color.Red);
 
                 if (_players[i].isReady) {
-                    DrawSpriteCentered(SPRITE_ID.TICK, (int)player.x, (int)player.y + 5);
+                    _canvas.DrawSpriteCentered(SPRITE_ID.TICK, (int)player.x, (int)player.y + 5);
                 } else {
                     allReady = false;
                 }
@@ -334,9 +304,9 @@ namespace Editor.Controls {
                 _gameState = GAMESTATE.IN_GAME;
             }
 
-            DrawSpriteCentered(titleText, (int)(TARGET_WIDTH * 0.5f), (int)(TARGET_HEIGHT * 0.5f));
-            DrawSpriteCentered(titleJoinText, (int)(TARGET_WIDTH * 0.5f), (int)(TARGET_HEIGHT * 0.5f) + 8);
-            DrawSpriteCentered(titleHint, (int)(TARGET_WIDTH * 0.5f), TARGET_HEIGHT - 12);
+            _canvas.DrawSpriteCentered(titleText, (int)(RenderCanvas.TARGET_WIDTH * 0.5f), (int)(RenderCanvas.TARGET_HEIGHT * 0.5f));
+            _canvas.DrawSpriteCentered(titleJoinText, (int)(RenderCanvas.TARGET_WIDTH * 0.5f), (int)(RenderCanvas.TARGET_HEIGHT * 0.5f) + 8);
+            _canvas.DrawSpriteCentered(titleHint, (int)(RenderCanvas.TARGET_WIDTH * 0.5f), RenderCanvas.TARGET_HEIGHT - 12);
         }
 
         void GameUpdate(GameTime gameTime) {
@@ -344,7 +314,7 @@ namespace Editor.Controls {
                 Player player = _players[i];
 
                 if (!player.isAlive) {
-                    DrawCircle(player.X, player.Y, Player.size, Color.Gray);
+                    _canvas.DrawCircle(player.X, player.Y, Player.size, Color.Gray);
                     continue;
                 }
 
@@ -353,14 +323,14 @@ namespace Editor.Controls {
                 player.x += mouseData.nDX * _moveSpeed;
                 player.y += mouseData.nDY * _moveSpeed;
 
-                DrawCircle(player.X, player.Y, Player.size, player.color);
+                _canvas.DrawCircle(player.X, player.Y, Player.size, player.color);
 
                 float rayCX = player.x + player.mouseData.nDX;
                 float rayCY = player.Y + player.mouseData.nDY;
-                DrawLine(player.X, player.Y, (int)rayCX, (int)rayCY, Color.Red);
+                _canvas.DrawLine(player.X, player.Y, (int)rayCX, (int)rayCY, Color.Red);
 
                 if (_players[i].mouseData.rightButton) {
-                    DrawRotatedSprite(player.shieldSprite, player.X, player.Y, player.shieldRotation);
+                    _canvas.DrawRotatedSprite(player.shieldSprite, player.X, player.Y, player.shieldRotation);
                 } else {
                     if (_players[i].mouseData.leftButton) {
                         SpawnBullet(_players[i]);
@@ -407,12 +377,12 @@ namespace Editor.Controls {
         }
 
         void GameoverUpdate(GameTime gameTime) {
-            DrawSpriteCentered(gameoverText, (int)(TARGET_WIDTH * 0.5f), (int)(TARGET_HEIGHT * 0.5f));
-            DrawSpriteCentered(titleHint, (int)(TARGET_WIDTH * 0.5f), (int)(TARGET_HEIGHT * 0.5f) + 8);
+            _canvas.DrawSpriteCentered(gameoverText, (int)(RenderCanvas.TARGET_WIDTH * 0.5f), (int)(RenderCanvas.TARGET_HEIGHT * 0.5f));
+            _canvas.DrawSpriteCentered(titleHint, (int)(RenderCanvas.TARGET_WIDTH * 0.5f), (int)(RenderCanvas.TARGET_HEIGHT * 0.5f) + 8);
 
             for (int i = 0; i < _players.Count; i++) {
                 Player player = _players[i];
-                DrawCircle(player.X, player.Y, Player.size, player.isAlive ? player.color : Color.Gray);
+                _canvas.DrawCircle(player.X, player.Y, Player.size, player.isAlive ? player.color : Color.Gray);
 
                 if (player.mouseData.leftButton && player.mouseData.rightButton) {
                     ResetGame();
@@ -428,93 +398,8 @@ namespace Editor.Controls {
             _gameState = GAMESTATE.TITLE;
         }
 
-        void DrawSpriteCentered(SPRITE_ID spriteId, int xPos, int yPos) {
-            if (Sprite.GetSprite(spriteId, out Sprite sprite)) {
-                DrawSpriteCentered(sprite, xPos, yPos);
-            }
-        }
-        void DrawSpriteCentered(Sprite sprite, int xPos, int yPos) {
-            DrawSprite(sprite, xPos - (int)(sprite.spriteWidth * 0.5f), yPos);
-        }
-        void DrawSprite(Sprite sprite, int xPos, int yPos) {
-            for (int y = 0; y < sprite.sprite.Length; y++) {
-                for (int x = 0; x < sprite.sprite[y].Length; x++) {
-                    SetPixel(x + xPos, y + yPos, sprite[y, x]);
-                }
-            }
-        }
-
-        void DrawRotatedSprite(Sprite sprite, int xPos, int yPos, float angle) {
-            float hWidth = sprite.spriteWidth * 0.5f;
-            float hHeight = sprite.spriteHeight * 0.5f;
-
-            for (int y = 0; y < sprite.sprite.Length; y++) {
-                for (int x = 0; x < sprite.sprite[y].Length; x++) {
-                    // Rotate point
-                    (float rx, float ry) = RotatePoint(x - hWidth, y - hHeight, angle);
-
-                    // Draw rotated point
-                    SetPixel((int)rx + xPos, (int)ry + yPos, sprite[y, x]);
-                }
-            }
-        }
-
-        private void SetPixel(int x, int y, Color c) {
-            if (c.A == 0) {
-                return;
-            }
-
-            if (x >= 0 && x < TARGET_WIDTH) {
-                if (y >= 0 && y < TARGET_HEIGHT) {
-                    _render[x + (y * TARGET_WIDTH)] = c;
-                }
-            }
-        }
-
-        private void DrawCircle(int px, int py, int radius, Color c) {
-            for (int y = -radius; y <= radius; y++)
-                for (int x = -radius; x <= radius; x++)
-                    if (x * x + y * y <= radius * radius)
-                        SetPixel(px + x, py + y, c);
-        }
-
         public bool CirclePointIntersect(float x, float y, float cx, float cy, float r) {
             return Math.Sqrt(Math.Pow(cx - x, 2) + Math.Pow(cy - y, 2)) < r;
-        }
-
-        public (float, float) RotatePoint(float x, float y, float angle) {
-            return (x * (float)Math.Cos(angle) - y * (float)Math.Sin(angle),
-                x * (float)Math.Sin(angle) + y * (float)Math.Cos(angle));
-        }
-
-        public void DrawLine(int x, int y, int x2, int y2, Color color) {
-            int w = x2 - x;
-            int h = y2 - y;
-            int dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0;
-            if (w < 0) dx1 = -1; else if (w > 0) dx1 = 1;
-            if (h < 0) dy1 = -1; else if (h > 0) dy1 = 1;
-            if (w < 0) dx2 = -1; else if (w > 0) dx2 = 1;
-            int longest = Math.Abs(w);
-            int shortest = Math.Abs(h);
-            if (!(longest > shortest)) {
-                longest = Math.Abs(h);
-                shortest = Math.Abs(w);
-                if (h < 0) dy2 = -1; else if (h > 0) dy2 = 1;
-                dx2 = 0;
-            }
-            int numerator = longest >> 1;
-            for (int i = 0; i <= longest; i++) {
-                SetPixel(x, y, color);
-                numerator += shortest;
-                if (!(numerator < longest)) {
-                    numerator -= longest;
-                    x += dx1;
-                    y += dy1;
-                } else {
-                    x += dx2;
-                    y += dy2;
-                }
-            }
         }
 
         bool CircleCircleIntersect() {

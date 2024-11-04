@@ -4,7 +4,7 @@ using Editor.Sprites;
 using Microsoft.Xna.Framework;
 
 namespace Editor {
-    public class Player {
+    public class Player : Actor {
         static Random rnd = new Random();
 
         public RawMouseData.MouseData mouseData => _mouseData;
@@ -46,7 +46,7 @@ namespace Editor {
             _mouseData = new RawMouseData.MouseData(id);
         }
 
-        public void Update(GameTime gameTime) {
+        public override void Update(GameTime gameTime) {
             this.mouseData.deltaX = 0;
             this.mouseData.deltaY = 0;
             this.mouseData.nDX = 0;
@@ -56,6 +56,8 @@ namespace Editor {
 
             shieldRotation += (float)gameTime.ElapsedGameTime.TotalSeconds * 3f;
         }
+
+        public override void Draw() {}
 
         public void Kill() {
             _isAlive = false;
