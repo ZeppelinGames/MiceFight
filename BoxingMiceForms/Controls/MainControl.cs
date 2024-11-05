@@ -113,7 +113,7 @@ namespace Editor.Controls {
             if (mouse.Mouse.Buttons == RawMouseButtonFlags.LeftButtonDown) {
                 RegisterMouse(mouseDevice);
             }
-            if (mouseDevice == null) return;
+            if (mouseDevice == null || mouseDevice.DevicePath == null) return;
             if (mouse == null || !_playerPath.ContainsKey(mouseDevice.DevicePath)) return;
 
             MouseData connected = _playerPath[mouseDevice.DevicePath].mouseData;
@@ -157,7 +157,7 @@ namespace Editor.Controls {
         }
 
         void RegisterMouse(RawInputDevice device) {
-            if (device == null) return;
+            if (device == null || device.DevicePath == null) return;
             if (!_playerPath.ContainsKey(device.DevicePath)) {
                 Debug.WriteLine($"Added mouse: {device.DevicePath} {device.ProductName}");
 
