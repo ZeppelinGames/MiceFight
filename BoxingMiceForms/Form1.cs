@@ -1,20 +1,19 @@
-﻿using Editor.Controls;
-using Linearstar.Windows.RawInput;
-using Linearstar.Windows.RawInput.Native;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System;
+using Editor.Controls;
 using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
 using System.Windows.Forms;
 
 namespace Editor {
     public partial class MainForm : Form {
         public static MainForm instance;
 
+        public Action mainFormLoaded;
+
         public MainControl mainControl => _mainControl;
         private MainControl _mainControl;
+
+        Panel bgPanel;
 
         public MainForm() {
             InitializeComponent();
@@ -29,13 +28,11 @@ namespace Editor {
                 MaximumSize = new Size(2000, 2000),
             };
 
-            this.TopMost = true;
             this.FormBorderStyle = FormBorderStyle.None;
             this.WindowState = FormWindowState.Maximized;
 
             this.FormClosing += Form1_Closing;
             this.DoubleBuffered = true;
-
         }
 
         public void CloseGame() {
@@ -49,14 +46,21 @@ namespace Editor {
 
         private void Form1_Load(object sender, EventArgs e) {
             this.Controls.Add(_mainControl);
-           
-            this.Controls.Add(new Panel() {
+
+            bgPanel = new Panel() {
                 Dock = DockStyle.Fill,
                 BackColor = Color.FromArgb(61, 54, 69)
-            });
+            };
+            this.Controls.Add(bgPanel);
             _mainControl?.UpdateWindow();
 
             Debug.WriteLine("Main Control initialised");
+            mainFormLoaded?.Invoke();
+        }
+
+        public void SetBGColor(Color c) {
+            if (bgPanel == null) return;
+            bgPanel.BackColor = c;
         }
 
         private void Form1_ResizeEnd(object sender, EventArgs e) {

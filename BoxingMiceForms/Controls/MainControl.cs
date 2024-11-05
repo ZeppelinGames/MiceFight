@@ -32,27 +32,7 @@ namespace Editor.Controls {
 
         private RenderCanvas _canvas;
 
-        //private const int DEFAULT_SCREEN_WIDTH = 1000;
-        //private const int DEFAULT_SCREEN_HEIGHT = 1000;
-
-        //private const int RenderCanvas.TARGET_WIDTH = 256;
-        //private const int RenderCanvas.TARGET_HEIGHT = 256;
-
-        //private int _screenWidth;
-        //private int _screenHeight;
-
-        //private int _renderWidth;
-        //private int _renderHeight;
-
         private float _moveSpeed = 0.5f;
-
-        //private static Color BackgroundColor = new Color(241, 233, 210);
-
-        //Texture2D _renderTarget;
-        //Rectangle _renderTargetRect;
-
-        //Color[] _render = new Color[RenderCanvas.TARGET_WIDTH * RenderCanvas.TARGET_HEIGHT];
-        //Color[] _clearRender = new Color[RenderCanvas.TARGET_WIDTH * RenderCanvas.TARGET_HEIGHT];
 
         Dictionary<string, Player> _playerPath = new Dictionary<string, Player>();
         List<Player> _players = new List<Player>();
@@ -63,7 +43,8 @@ namespace Editor.Controls {
         // Game state vars
         GAMESTATE _gameState = GAMESTATE.TITLE;
 
-        Sprite titleText, titleJoinText, titleHint, gameoverText;
+        Sprite titleText  = FontSprite.GetText("MICE FIGHT", Color.Black);
+        Sprite titleJoinText, titleHint, gameoverText;
 
         Color[] _playerColors = new Color[] {
             new Color(222, 110, 79),
@@ -82,11 +63,7 @@ namespace Editor.Controls {
             _mouseHook = Hook.GlobalEvents();
             _mouseHook.MouseDownExt += GlobalHookMousePress;
 
-            //for (int i = 0; i < _clearRender.Length; i++) {
-            //    _clearRender[i] = BackgroundColor;
-            //}
-
-            titleText = FontSprite.GetText("BOXING MICE", Color.Black);
+//            titleText = 
             titleJoinText = FontSprite.GetText("CLICK LMB TO JOIN!", Color.Black);
             titleHint = FontSprite.GetText("LMB + RMB TO READY", Color.Black);
             gameoverText = FontSprite.GetText("GAMEOVER!", Color.Black);
@@ -339,7 +316,7 @@ namespace Editor.Controls {
             }
 
             // Check if you shot someone
-            List<Bullet> blockedBullets = new List<Bullet>();   
+            List<Bullet> blockedBullets = new List<Bullet>();
             int alivePlayerCount = 0;
             for (int j = 0; j < _players.Count; j++) {
                 for (int i = 0; i < _bullets.Count; i++) {

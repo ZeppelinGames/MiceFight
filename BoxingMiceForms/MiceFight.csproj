@@ -171,8 +171,8 @@
       <Private>True</Private>
       <Private>True</Private>
     </Reference>
-    <Reference Include="System.Net.Http, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.Net.Http.4.3.0\lib\net46\System.Net.Http.dll</HintPath>
+    <Reference Include="System.Net.Http, Version=4.1.1.3, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>packages\System.Net.Http.4.3.4\lib\net46\System.Net.Http.dll</HintPath>
       <Private>True</Private>
       <Private>True</Private>
     </Reference>
@@ -247,6 +247,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Actor.cs" />
     <Compile Include="Bullet.cs" />
     <Compile Include="Controls\MainControl.cs">
       <SubType>Component</SubType>
@@ -261,6 +262,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RawMouseData.cs" />
+    <Compile Include="RenderCanvas.cs" />
     <Compile Include="Sprites\FontSprite.cs" />
     <Compile Include="Sprites\RectSprite.cs" />
     <Compile Include="Sprites\Sprite.cs" />
