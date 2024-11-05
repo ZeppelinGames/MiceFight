@@ -11,7 +11,7 @@ namespace Editor.Sprites {
         static int _characterWidth = 3;
         static int _characterHeight = 4;
 
-        static Dictionary<char, int[][]> _characters = new Dictionary<char, int[][]> {
+        readonly static Dictionary<char, int[][]> _characters = new Dictionary<char, int[][]> {
             { 'A', new int[][]{
                 new int []{ 1,1,1 },
                 new int []{ 1,0,1 },

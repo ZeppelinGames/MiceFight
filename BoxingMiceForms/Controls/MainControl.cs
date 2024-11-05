@@ -1,20 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.Windows.Forms;
 
 using Linearstar.Windows.RawInput;
 using Linearstar.Windows.RawInput.Native;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.Forms.Controls;
 using Gma.System.MouseKeyHook;
 
 using Keys = Microsoft.Xna.Framework.Input.Keys;
 using Color = Microsoft.Xna.Framework.Color;
-using Rectangle = Microsoft.Xna.Framework.Rectangle;
 using Editor.Sprites;
 using static Editor.Sprite;
 using static Editor.RawMouseData;
@@ -43,8 +40,10 @@ namespace Editor.Controls {
         // Game state vars
         GAMESTATE _gameState = GAMESTATE.TITLE;
 
-        Sprite titleText  = FontSprite.GetText("MICE FIGHT", Color.Black);
-        Sprite titleJoinText, titleHint, gameoverText;
+        static readonly Sprite titleText  = FontSprite.GetText("MICE FIGHT", Color.Black);
+        static readonly Sprite titleJoinText = FontSprite.GetText("CLICK LMB TO JOIN!", Color.Black);
+        static readonly Sprite titleHint = FontSprite.GetText("LMB + RMB TO READY", Color.Black);
+        static readonly Sprite gameoverText = FontSprite.GetText("GAMEOVER!", Color.Black);
 
         Color[] _playerColors = new Color[] {
             new Color(222, 110, 79),
@@ -62,11 +61,6 @@ namespace Editor.Controls {
         public MainControl() {
             _mouseHook = Hook.GlobalEvents();
             _mouseHook.MouseDownExt += GlobalHookMousePress;
-
-//            titleText = 
-            titleJoinText = FontSprite.GetText("CLICK LMB TO JOIN!", Color.Black);
-            titleHint = FontSprite.GetText("LMB + RMB TO READY", Color.Black);
-            gameoverText = FontSprite.GetText("GAMEOVER!", Color.Black);
 
             UpdateWindow();
         }
