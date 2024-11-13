@@ -24,13 +24,21 @@ namespace Editor {
 
         Color[] _render = new Color[TARGET_WIDTH * TARGET_HEIGHT];
         Color[] _clearRender = new Color[TARGET_WIDTH * TARGET_HEIGHT];
-        static Color BackgroundColor = new Color(241, 233, 210);
+
+        static readonly System.Drawing.Color WindowColor = System.Drawing.Color.FromArgb(61, 54, 69);
+        static readonly Color BackgroundColor = new Color(241, 233, 210);
 
         GraphicsDevice _graphicsDevice;
+
+        int _screenshakeAmplitude = 10;
+        float _screenshakeTime = 2f;
 
         public RenderCanvas(GraphicsDevice graphics) {
             _screenWidth = DEFAULT_SCREEN_WIDTH;
             _screenHeight = DEFAULT_SCREEN_HEIGHT;
+
+            // BG colour around main render
+            MainForm.instance.mainFormLoaded += MainFormLoad;
 
             for (int i = 0; i < _clearRender.Length; i++) {
                 _clearRender[i] = BackgroundColor;
@@ -39,6 +47,10 @@ namespace Editor {
             this._graphicsDevice = graphics;
             _renderTarget = new Texture2D(this._graphicsDevice, TARGET_WIDTH, TARGET_HEIGHT);
             _renderTarget.SetData(_render);
+        }
+
+        void MainFormLoad() {
+            MainForm.instance.SetBGColor(WindowColor);
         }
 
         public void Resize() {
@@ -52,7 +64,7 @@ namespace Editor {
 
             _renderWidth = (int)MathHelper.Clamp(newWidth, 0, 2048);
             _renderHeight = (int)MathHelper.Clamp(newHeight, 0, 2048);
-            
+
             _renderTargetRect = new Rectangle(
                 (_screenWidth - _renderWidth) / 2,
                 (_screenHeight - _renderHeight) / 2,
@@ -65,7 +77,7 @@ namespace Editor {
             _renderTarget.SetData(_render);
 
             // Clear screen
-            _graphicsDevice.Clear(Color.Black);
+            _graphicsDevice.Clear(BackgroundColor);
 
             // Draw render texture
             spriteBatch.Begin(samplerState: SamplerState.PointClamp);

@@ -15,6 +15,7 @@ using Color = Microsoft.Xna.Framework.Color;
 using Editor.Sprites;
 using static Editor.Sprite;
 using static Editor.RawMouseData;
+using Editor.Sprites.Fonts;
 
 namespace Editor.Controls {
     public enum GAMESTATE {
@@ -40,10 +41,11 @@ namespace Editor.Controls {
         // Game state vars
         GAMESTATE _gameState = GAMESTATE.TITLE;
 
-        static readonly Sprite titleText  = FontSprite.GetText("MICE FIGHT", Color.Black);
-        static readonly Sprite titleJoinText = FontSprite.GetText("CLICK LMB TO JOIN!", Color.Black);
-        static readonly Sprite titleHint = FontSprite.GetText("LMB + RMB TO READY", Color.Black);
-        static readonly Sprite gameoverText = FontSprite.GetText("GAMEOVER!", Color.Black);
+        static readonly Sprite titleText = FontSprite.GetText("MICE FIGHT", Color.Black, FontSmall.Font);
+        static readonly Sprite titleJoinText = FontSprite.GetText("CLICK LMB TO JOIN!", Color.Black, FontSmall.Font);
+        static readonly Sprite titleHint = FontSprite.GetText("LMB + RMB TO READY", Color.Black, FontSmall.Font);
+        static readonly Sprite gameoverText = FontSprite.GetText("GAMEOVER!", Color.Black, FontSmall.Font);
+        static readonly Sprite testText = FontSprite.GetText("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789! +", Color.Black, FontSmall.Font);
 
         Color[] _playerColors = new Color[] {
             new Color(222, 110, 79),
@@ -275,6 +277,7 @@ namespace Editor.Controls {
                 _gameState = GAMESTATE.IN_GAME;
             }
 
+            _canvas.DrawSprite(testText, 25, 25);
             _canvas.DrawSpriteCentered(titleText, (int)(RenderCanvas.TARGET_WIDTH * 0.5f), (int)(RenderCanvas.TARGET_HEIGHT * 0.5f));
             _canvas.DrawSpriteCentered(titleJoinText, (int)(RenderCanvas.TARGET_WIDTH * 0.5f), (int)(RenderCanvas.TARGET_HEIGHT * 0.5f) + 8);
             _canvas.DrawSpriteCentered(titleHint, (int)(RenderCanvas.TARGET_WIDTH * 0.5f), RenderCanvas.TARGET_HEIGHT - 12);

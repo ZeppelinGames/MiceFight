@@ -25,7 +25,7 @@ namespace Editor {
             _mainControl = new MainControl() {
                 Margin = new Padding(0),
                 Padding = new Padding(0),
-                MaximumSize = new Size(2000, 2000),
+                MaximumSize = new Size(2048, 2048),
             };
 
             this.FormBorderStyle = FormBorderStyle.None;
@@ -49,7 +49,7 @@ namespace Editor {
 
             bgPanel = new Panel() {
                 Dock = DockStyle.Fill,
-                BackColor = Color.FromArgb(61, 54, 69)
+                BackColor = Color.FromArgb(0,0,0)
             };
             this.Controls.Add(bgPanel);
             _mainControl?.UpdateWindow();
