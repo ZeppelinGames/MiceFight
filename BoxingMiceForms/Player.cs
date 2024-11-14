@@ -29,7 +29,8 @@ namespace Editor {
                 if (value != _color) {
                     _color = value;
                     shieldSprite.SetMainColour(value);
-                    _sprite = new CursorSprite(_color);
+                    if(_sprite != null) 
+                        _sprite.SetMainColour(_color);
                 }
             }
         }
@@ -47,6 +48,11 @@ namespace Editor {
             this.x = x;
             this.y = y;
             _mouseData = new RawMouseData.MouseData(id);
+        }
+
+        public void SetSprite(Sprite s)
+        {
+            this._sprite = s;
         }
 
         public override void Update(GameTime gameTime) {

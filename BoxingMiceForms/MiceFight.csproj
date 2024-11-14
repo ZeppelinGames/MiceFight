@@ -261,6 +261,7 @@
     <Compile Include="Gamestates\GameoverGameState.cs" />
     <Compile Include="Gamestates\GameState.cs" />
     <Compile Include="Gamestates\TitleGameState.cs" />
+    <Compile Include="Helpers.cs" />
     <Compile Include="Multibutton.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="Program.cs" />
@@ -273,7 +274,10 @@
     <Compile Include="Sprites\Fonts\FontSmall.cs" />
     <Compile Include="Sprites\RectSprite.cs" />
     <Compile Include="Sprites\Sprite.cs" />
+    <Compile Include="Sprites\Text.cs" />
     <Compile Include="Sprites\TickSprite.cs" />
+    <Compile Include="UI\UIElement.cs" />
+    <Compile Include="UI\UIManager.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>

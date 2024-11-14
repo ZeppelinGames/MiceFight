@@ -14,15 +14,19 @@ using Keys = Microsoft.Xna.Framework.Input.Keys;
 using Color = Microsoft.Xna.Framework.Color;
 using static Editor.RawMouseData;
 using Editor.Gamestates;
+using Editor.UI;
 
-namespace Editor.Controls {
-    public enum GAMESTATE {
+namespace Editor.Controls
+{
+    public enum GAMESTATE
+    {
         TITLE,
         IN_GAME,
         GAMEOVER
     };
 
-    public class MainControl : MonoGameControl {
+    public class MainControl : MonoGameControl
+    {
         public static MainControl Instance;
         public static Action<Player, RawMouseButtonFlags> onMouseClick;
 
@@ -30,24 +34,19 @@ namespace Editor.Controls {
         private IKeyboardMouseEvents _mouseHook;
         private RenderCanvas _canvas;
 
-        private static Dictionary<GAMESTATE, GameState> _gameStates = new Dictionary<GAMESTATE, GameState>() {
-            { GAMESTATE.TITLE, new TitleGameState()},
-            { GAMESTATE.IN_GAME, new GameGameState()},
-            { GAMESTATE.GAMEOVER, new GameoverGameState() }
-        };
+        private static Dictionary<GAMESTATE, GameState> _gameStates;
 
         private float _moveSpeed = 0.5f;
 
-        Dictionary<string, Player> _playerPath = new Dictionary<string, Player>();
-        List<Player> _players = new List<Player>();
-        public int PlayerCount => _players.Count;
+        public readonly Dictionary<string, Player> _playerPath = new Dictionary<string, Player>();
+        public readonly List<Player> _players = new List<Player>();
         int playerId = 0;
 
-        List<Bullet> _bullets = new List<Bullet>();
+        public readonly List<Bullet> _bullets = new List<Bullet>();
 
         // Game state vars
         GAMESTATE _gameState = GAMESTATE.TITLE;
-        GameState _currentState = _gameStates[GAMESTATE.TITLE];
+        GameState _currentState;
 
         public static readonly Color[] PlayerColors = new Color[] {
             new Color(222, 110, 79),
@@ -62,42 +61,70 @@ namespace Editor.Controls {
             new Color(229, 138, 133),
         };
 
-        public MainControl() {
+        public MainControl()
+        {
             _mouseHook = Hook.GlobalEvents();
             _mouseHook.MouseDownExt += GlobalHookMousePress;
             Instance = this;
+            _gameStates = new Dictionary<GAMESTATE, GameState>() {
+                { GAMESTATE.TITLE, new TitleGameState(Instance)},
+                { GAMESTATE.IN_GAME, new GameGameState(Instance)},
+                { GAMESTATE.GAMEOVER, new GameoverGameState(Instance) }
+            };
+            SetGameState(GAMESTATE.TITLE);
 
             UpdateWindow();
         }
 
-        protected override void Initialize() {
+        protected override void Initialize()
+        {
             _canvas = new RenderCanvas(Editor.GraphicsDevice);
 
             UpdateWindow();
             base.Initialize();
         }
 
-        public void UpdateWindow() {
+        public void UpdateWindow()
+        {
             if (_canvas == null) return;
             _canvas.Resize();
         }
 
-        private void GlobalHookMousePress(object sender, MouseEventExtArgs e) {
+        private void GlobalHookMousePress(object sender, MouseEventExtArgs e)
+        {
             e.Handled = true;
             return;
         }
 
-        public void DeregisterHook() {
+        public void DeregisterHook()
+        {
             _mouseHook.MouseDownExt -= GlobalHookMousePress;
             _mouseHook.Dispose();
         }
 
-        protected override void WndProc(ref Message m) {
-            switch (m.Msg) {
+        protected override void WndProc(ref Message m)
+        {
+            switch (m.Msg)
+            {
                 case (int)MouseEvents.WM_INPUT:
                     RawInputData inputData = RawInputData.FromHandle(m.LParam);
-                    switch (inputData) {
+                    switch (inputData)
+                    {
                         case RawInputMouseData mouse:
+                            // Try get player
+                            RawInputDevice mouseDevice = mouse.Device;
+                            if (mouse != null && _playerPath.ContainsKey(mouseDevice.DevicePath))
+                            {
+                                // Update mouse
+                                Player mousePlayer = _playerPath[mouseDevice.DevicePath];
+                                mousePlayer.mouseData.UpdateKeys(mouse.Mouse);
+                                MouseData mData = mousePlayer.mouseData;
+                                if (mData.leftButton)
+                                {
+                                    UIManager.OnClick?.Invoke(mousePlayer, mousePlayer.X, mousePlayer.Y);
+                                }
+                            }
+
                             if (_currentState != null)
                                 _currentState.OnMouseInput(mouse);
                             break;
@@ -107,21 +134,31 @@ namespace Editor.Controls {
             base.WndProc(ref m);
         }
 
-        public void SetGameState(GAMESTATE gameState) {
+        public void SetGameState(GAMESTATE gameState)
+        {
             this._gameState = gameState;
             this._currentState = _gameStates[gameState];
         }
 
-        void SpawnBullet(Player player) {
+        public void SpawnBullet(Player player)
+        {
             if (player.mouseData.nLDX == 0 && player.mouseData.nLDY == 0) return;
 
             Bullet b = new Bullet(player);
             _bullets.Add(b);
         }
 
-        public void RegisterMouse(RawInputDevice device) {
-            if (device == null || device.DevicePath == null) return;
-            if (!_playerPath.ContainsKey(device.DevicePath)) {
+        public Color GetPlayerColor()
+        {
+            return PlayerColors[playerId % (PlayerColors.Length - 1)];
+        }
+
+        public bool RegisterMouse(RawInputDevice device, out Player p)
+        {
+            p = null;
+            if (device == null || device.DevicePath == null) return false;
+            if (!_playerPath.ContainsKey(device.DevicePath))
+            {
                 Debug.WriteLine($"Added mouse: {device.DevicePath} {device.ProductName}");
 
                 Player newPlayer = new Player(playerId);
@@ -131,18 +168,17 @@ namespace Editor.Controls {
 
                 _players.Add(newPlayer);
                 _playerPath.Add(device.DevicePath, newPlayer);
+                p = newPlayer;
+                return true;
             }
-        }
-        public Player GetPlayer(int playerId) {
-            if (playerId < 0 || playerId >= _players.Count) {
-                return null;
-            }
-            return _players[playerId];
+            return false;
         }
 
-        protected override void Update(GameTime gameTime) {
+        protected override void Update(GameTime gameTime)
+        {
             KeyboardState keyboardState = Keyboard.GetState();
-            if (keyboardState.IsKeyDown(Keys.Escape)) {
+            if (keyboardState.IsKeyDown(Keys.Escape))
+            {
                 // close game
                 MainForm.instance.CloseGame();
             }
@@ -161,7 +197,8 @@ namespace Editor.Controls {
             base.Update(gameTime);
         }
 
-        protected override void Draw() {
+        protected override void Draw()
+        {
             // Canvas draw
             // Draw game state here
             if (_currentState != null)
@@ -170,31 +207,13 @@ namespace Editor.Controls {
             base.Draw();
         }
 
-        public void ResetGame() {
+        public void ResetGame()
+        {
             _players.Clear();
             _bullets.Clear();
             _playerPath.Clear();
             playerId = 0;
             SetGameState(GAMESTATE.TITLE);
-        }
-
-        public bool CirclePointIntersect(float x, float y, float cx, float cy, float r) {
-            return Math.Sqrt(Math.Pow(cx - x, 2) + Math.Pow(cy - y, 2)) < r;
-        }
-
-        bool CircleCircleIntersect() {
-            return false;
-        }
-
-        float Clamp(float v, float min, float max) {
-            return Math.Max(Math.Min(v, max), min);
-        }
-
-        (float, float) Normalise(float x, float y) {
-            if (x == 0 && y == 0) return (x, y);
-
-            float dist = (float)Math.Sqrt(x * x + y * y);
-            return (x / dist, y / dist);
         }
     }
 }

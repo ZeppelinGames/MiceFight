@@ -33,6 +33,15 @@ namespace Editor {
         }
         protected Sprite() { }
 
+        protected void SetSprite(int[][] sprite)
+        {
+            UpdateSprite(sprite, new Color[]
+            {
+                Color.Transparent,
+                Color.White
+            });
+        }
+
         protected void UpdateSprite(int[][] sprite, Color[] palette) {
             this._sprite = sprite;
             this._palette = palette;
@@ -49,6 +58,7 @@ namespace Editor {
         protected void UpdatePalette(Color[] palette) {
             this._palette = palette;
         }
+        public virtual void SetMainColour(Color c) { }
 
         public Color this[int x, int y] {
             get {
