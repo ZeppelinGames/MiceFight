@@ -21,12 +21,15 @@ namespace Editor {
         public int X => (int)x;
         public int Y => (int)y;
 
+        private Sprite _sprite;
+
         public Color color {
             get => _color;
             set {
                 if (value != _color) {
                     _color = value;
                     shieldSprite.SetMainColour(value);
+                    _sprite = new CursorSprite(_color);
                 }
             }
         }
@@ -57,7 +60,9 @@ namespace Editor {
             shieldRotation += (float)gameTime.ElapsedGameTime.TotalSeconds * 3f;
         }
 
-        public override void Draw() {}
+        public override void Draw(RenderCanvas canvas) {
+            canvas.DrawSprite(_sprite, X, Y);
+        }
 
         public void Kill() {
             _isAlive = false;

@@ -257,13 +257,19 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
+    <Compile Include="Gamestates\GameGameState.cs" />
+    <Compile Include="Gamestates\GameoverGameState.cs" />
+    <Compile Include="Gamestates\GameState.cs" />
+    <Compile Include="Gamestates\TitleGameState.cs" />
+    <Compile Include="Multibutton.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RawMouseData.cs" />
     <Compile Include="RenderCanvas.cs" />
-    <Compile Include="Sprites\BitFont.cs" />
+    <Compile Include="Sprites\CursorSprite.cs" />
     <Compile Include="Sprites\FontSprite.cs" />
+    <Compile Include="Sprites\Fonts\FontMedium.cs" />
     <Compile Include="Sprites\Fonts\FontSmall.cs" />
     <Compile Include="Sprites\RectSprite.cs" />
     <Compile Include="Sprites\Sprite.cs" />

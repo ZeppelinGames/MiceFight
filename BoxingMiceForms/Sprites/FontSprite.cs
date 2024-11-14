@@ -1,15 +1,28 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 
 namespace Editor.Sprites {
-    public static class FontSprite {
+    public class FontSprite {
+        protected Dictionary<char, int[]> _charactersBit = new Dictionary<char, int[]>();
+        public readonly int WIDTH;
+        public readonly int HEIGHT;
 
-        public static Sprite GetText(string text, Color color, BitFont font, int letterSpacing = 2) {
-            int fontWidth = font.GetCharWidth();
-            int fontHeight = font.GetCharHeight();
-            int textWidth = text.Length * (fontWidth + letterSpacing);
+        public FontSprite(Dictionary<char, int[]> chars, int width, int height) {
+            this._charactersBit = chars;
+            this.WIDTH = width;
+            this.HEIGHT = height;
+        }
+        public bool GetCharData(char c, out int[] d) {
+            bool hasChar = _charactersBit.ContainsKey(c);
+            d = hasChar ? _charactersBit[c] : new int[0];
+            return hasChar;
+        }
 
-            int[][] sprite = new int[fontHeight][];
+        public static Sprite GetText(string text, Color color, FontSprite font, int letterSpacing = 1) {
+            int textWidth = text.Length * (font.WIDTH + letterSpacing);
+
+            int[][] sprite = new int[font.HEIGHT][];
             for (int i = 0; i < sprite.Length; i++) {
                 sprite[i] = new int[textWidth];
             }
@@ -17,20 +30,17 @@ namespace Editor.Sprites {
 
             int cOffset = 0;
             for (int i = 0; i < text.Length; i++) {
-                if (font.GetCharData(text[i], out int charData)) {
-                    int y = fontHeight - 1;
-                    while (charData > 0) {
-                        int rowNum = charData % 10;
-                        charData /= 10;
-                        for (int j = 0; j < fontWidth; j++) {
+                if (font.GetCharData(text[i], out int[] charData)) {
+                    for(int j = 0; j < charData.Length; j++) {
+                        int rowNum = charData[j];
+                        for (int k = 0; k < font.WIDTH; k++) {
                             int b = rowNum & 1;
-                            sprite[y][(fontWidth - 1 - j) + cOffset] = b;
+                            sprite[j][(font.WIDTH - 1 - k) + cOffset] = b;
                             rowNum >>= 1;
                         }
-                        y--;
                     }
 
-                    cOffset += fontWidth + letterSpacing;
+                    cOffset += font.WIDTH + letterSpacing;
                 }
             }
 

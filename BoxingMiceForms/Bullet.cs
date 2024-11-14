@@ -11,10 +11,10 @@ namespace Editor {
         public float dy;
         public int dY => (int)dy;
 
-        public int playerId;
+        public Player player;
 
         public Bullet(Player p) {
-            this.playerId = p.id;
+            this.player = p;
             this.x = p.x;
             this.y = p.y;
             this.dx = p.mouseData.nLDX;
@@ -26,6 +26,8 @@ namespace Editor {
             this.y += this.dy;
         }
 
-        public override void Draw() {}
+        public override void Draw(RenderCanvas canvas) {
+            canvas.DrawLine(X, Y, X + (int)dx, Y + (int)dy, player.color);
+        }
     }
 }
