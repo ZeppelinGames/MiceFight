@@ -303,6 +303,14 @@ namespace Editor.Sprites.Fonts {
                     0b0000,
                     0b0100,
                 } },
+                    {'?', new int[] {
+                    0b0110,
+                    0b1001,
+                    0b0010,
+                    0b0100,
+                    0b0000,
+                    0b0100,
+                } },
                     {'+', new int[] {
                     0b00000,
                     0b00000,

@@ -22,7 +22,8 @@ namespace Editor.Controls
     {
         TITLE,
         IN_GAME,
-        GAMEOVER
+        GAMEOVER,
+        HOWTO
     };
 
     public class MainControl : MonoGameControl
@@ -137,7 +138,10 @@ namespace Editor.Controls
         public void SetGameState(GAMESTATE gameState)
         {
             this._gameState = gameState;
+            if (this._currentState != null)
+                this._currentState.OnInactive();
             this._currentState = _gameStates[gameState];
+            this._currentState.OnActive();
         }
 
         public void SpawnBullet(Player player)
@@ -162,7 +166,7 @@ namespace Editor.Controls
                 Debug.WriteLine($"Added mouse: {device.DevicePath} {device.ProductName}");
 
                 Player newPlayer = new Player(playerId);
-                newPlayer.playerColorIndex = rnd.Next(0, PlayerColors.Length);
+                newPlayer.playerColorIndex = playerId % (PlayerColors.Length - 1);
                 newPlayer.color = PlayerColors[newPlayer.playerColorIndex];
                 playerId++;
 

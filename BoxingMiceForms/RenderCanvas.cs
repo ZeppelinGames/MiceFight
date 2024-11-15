@@ -148,7 +148,7 @@ namespace Editor {
             }
         }
         public void DrawSpriteCentered(Sprite sprite, int xPos, int yPos) {
-            DrawSprite(sprite, xPos - (int)(sprite.spriteWidth * 0.5f), yPos);
+            DrawSprite(sprite, xPos - (int)(sprite.spriteWidth * 0.5f), yPos - (int)(sprite.spriteHeight * 0.5f));
         }
         public void DrawSprite(Sprite sprite, int xPos, int yPos) {
             for (int y = 0; y < sprite.sprite.Length; y++) {

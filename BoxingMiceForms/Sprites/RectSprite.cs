@@ -6,13 +6,13 @@ namespace Editor.Sprites {
         public RectSprite(int size, Color c) : this(size, size, c) { }
         public RectSprite(int width, int height, Color c)
         {
-            int[][] rect = new int[width][];
+            int[][] rect = new int[height][];
             for (int i = 0; i < rect.Length; i++)
             {
-                rect[i] = new int[height];
+                rect[i] = new int[width];
                 for (int j = 0; j < rect[i].Length; j++)
                 {
-                    rect[i][j] = (i == 0 || j == 0 || i == width - 1 || j == height - 1) ? 0 : -1;
+                    rect[i][j] = (i == 0 || j == 0 || i == height - 1 || j == width - 1) ? 0 : -1;
                 }
             }
 

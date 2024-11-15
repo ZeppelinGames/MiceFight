@@ -260,6 +260,7 @@
     <Compile Include="Gamestates\GameGameState.cs" />
     <Compile Include="Gamestates\GameoverGameState.cs" />
     <Compile Include="Gamestates\GameState.cs" />
+    <Compile Include="Gamestates\HowToPlayState.cs" />
     <Compile Include="Gamestates\TitleGameState.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="Multibutton.cs" />

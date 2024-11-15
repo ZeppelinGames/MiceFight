@@ -14,6 +14,7 @@ namespace Editor.Gamestates {
         }
 
         public virtual void OnActive() {}
+        public virtual void OnInactive() {}
 
         public virtual void OnMouseInput(RawInputMouseData mouse) {
             RawInputDevice mouseDevice = mouse.Device;

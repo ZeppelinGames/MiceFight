@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using Editor.Sprites;
 using Microsoft.Xna.Framework;
 
-namespace Editor {
-    public class Player : Actor {
+namespace Editor
+{
+    public class Player : Actor
+    {
         static Random rnd = new Random();
 
         public RawMouseData.MouseData mouseData => _mouseData;
@@ -23,13 +25,16 @@ namespace Editor {
 
         private Sprite _sprite;
 
-        public Color color {
+        public Color color
+        {
             get => _color;
-            set {
-                if (value != _color) {
+            set
+            {
+                if (value != _color)
+                {
                     _color = value;
                     shieldSprite.SetMainColour(value);
-                    if(_sprite != null) 
+                    if (_sprite != null)
                         _sprite.SetMainColour(_color);
                 }
             }
@@ -43,11 +48,18 @@ namespace Editor {
 
         public static int size = 4;
 
-        public Player(int id, int x = 0, int y = 0) {
+        public Player(int id, int x = 0, int y = 0)
+        {
             this.id = id;
             this.x = x;
             this.y = y;
             _mouseData = new RawMouseData.MouseData(id);
+        }
+
+        public void SetPosition(int x, int y)
+        {
+            this.x = x;
+            this.y = y;
         }
 
         public void SetSprite(Sprite s)
@@ -55,7 +67,8 @@ namespace Editor {
             this._sprite = s;
         }
 
-        public override void Update(GameTime gameTime) {
+        public override void Update(GameTime gameTime)
+        {
             this.mouseData.deltaX = 0;
             this.mouseData.deltaY = 0;
             this.mouseData.nDX = 0;
@@ -66,11 +79,13 @@ namespace Editor {
             shieldRotation += (float)gameTime.ElapsedGameTime.TotalSeconds * 3f;
         }
 
-        public override void Draw(RenderCanvas canvas) {
+        public override void Draw(RenderCanvas canvas)
+        {
             canvas.DrawSprite(_sprite, X, Y);
         }
 
-        public void Kill() {
+        public void Kill()
+        {
             _isAlive = false;
         }
     }

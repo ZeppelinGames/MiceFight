@@ -12,7 +12,38 @@ namespace Editor.Gamestates
 {
     public class TitleGameState : GameState
     {
-        public TitleGameState(MainControl mc) : base(mc) { }
+        Multibutton playButton;
+        public TitleGameState(MainControl mc) : base(mc)
+        {
+            playButton = new Multibutton(mc, RenderCanvas.TARGET_WIDTH / 2, 170, "READY!", Color.Black);
+            playButton.OnButtonClick += PlayButtonClick;
+            playButton.Active = false;
+        }
+
+        void PlayButtonClick()
+        {
+            if (_main._players.Count >= 2 &&
+                playButton.playersClicked.Count == _main._players.Count)
+            {
+                _main.SetGameState(GAMESTATE.IN_GAME);
+                playButton.Active = false;
+            }
+        }
+
+        public override void OnActive()
+        {
+            if (playButton != null)
+            {
+                playButton.playersClicked.Clear();
+                playButton.Active = true;
+            }
+        }
+
+        public override void OnInactive()
+        {
+            if (playButton != null)
+                playButton.Active = false;
+        }
 
         public override void OnMouseInput(RawInputMouseData mouse)
         {
@@ -23,7 +54,8 @@ namespace Editor.Gamestates
             {
                 if (MainControl.Instance.RegisterMouse(mouseDevice, out Player newPlayer))
                 {
-                    newPlayer.SetSprite(new CursorSprite(_main.GetPlayerColor()));
+                    newPlayer.SetPosition(RenderCanvas.TARGET_WIDTH / 2, RenderCanvas.TARGET_HEIGHT / 2);
+                    newPlayer.SetSprite(new CursorSprite(newPlayer.color));
                 }
             }
             if (mouseDevice == null || mouseDevice.DevicePath == null) return;
@@ -67,9 +99,9 @@ namespace Editor.Gamestates
                 Player p = _main._players[i];
                 p.Draw(canvas);
             }
+            playButton.Draw(canvas);
             canvas.DrawSpriteCentered(Text.TitleText, (int)(RenderCanvas.TARGET_WIDTH * 0.5f), (int)(RenderCanvas.TARGET_HEIGHT * 0.5f));
             canvas.DrawSpriteCentered(Text.TitleJoinText, (int)(RenderCanvas.TARGET_WIDTH * 0.5f), (int)(RenderCanvas.TARGET_HEIGHT * 0.5f) + 8);
-            canvas.DrawSpriteCentered(Text.TitleHint, (int)(RenderCanvas.TARGET_WIDTH * 0.5f), RenderCanvas.TARGET_HEIGHT - 12);
         }
     }
 }
